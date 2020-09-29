@@ -2,4 +2,4 @@
 TU data mining course fall 2020
 
 # About
-I don't even know what these are for. It worked.
+I don't even know what these are for.
