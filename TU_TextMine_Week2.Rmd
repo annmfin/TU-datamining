@@ -1,0 +1,208 @@
+---
+title: "TU Datamining Week 2: Dataframes and Types"
+author: "Ann Marie Finley"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+    number_sections: false
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    df_print: paged
+    css: jamie_mod4.css
+---
+
+```{r setup, include=FALSE, cache=T}
+knitr::opts_chunk$set(fig.width=6, fig.height=4, fig.align = 'center', fig.path='Figs/', echo=TRUE, tidy=TRUE, message=F, warning=F, cache=T)
+```
+
+# Libraries 
+```{r echo=T, message=F}
+library(tidyverse)
+library(janitor)
+library(tidyverse)
+```
+
+# Vectors
+Uses the c() command. Contain all the same type of variable (integer, character, etc). Combines elements into a vector. 
+```{r}
+emma <- c("a", "b", "c") #strings are combinations of more than one character
+print(emma)
+typeof(emma) #tells me what type of data I am working with
+```
+
+Making a new vector
+```{r}
+amf <- seq(20, 25) #produce sequence 20-25 
+print(amf) #figure out getting a series of numbers. 
+#******Why does "by=1" change to "double" type instead of "vector" type********
+typeof(amf) #tells me what type of data I am working with
+```
+
+
+# Dataset 1
+We'll read in and inspect a very simple dataframe (dat_simple) here.  
+```{r}
+easy <- read.csv("dat_simple.csv", header=T)  #read in data, header is first row
+#remember no spaces, csv or text is best, or CamelText
+```
+
+Look at its structure and check for missing observations
+```{r}
+str(easy) #str stands for structure. Here, I am checking the structure of easy
+```
+
+Print the whole dataframe
+```{r}
+print(easy) #look at whole dataframe, can also just type "easy" no quotes
+```
+
+Examine just the first seven rows
+```{r}
+head(easy, 7)
+```
+
+Examine just the last three rows
+```{r}
+tail(easy, 3)
+```
+
+What is the smallest and largest shoe size?
+```{r}
+max(easy$Shoe) #easy is the dresser, the drawer is Shoe, find max value
+min(easy$Shoe) #easy is the dresser, the drawer is Shoe, find min value
+range(easy$Shoe) #gives range of min to max values of Shoe within easy
+```
+
+How many IQ observations in my dataset?
+```{r}
+length(easy$IQ) #How long is this vector IQ in the dataframe easy?
+#AKA how many IQ observations do I have? How does this compare to my total number of observations?
+```
+
+
+What is the average IQ?
+```{r}
+mean(easy$IQ) #mean value of IQ
+summary(easy$IQ) #summary (descriptive) statistics on IQ
+```
+
+Scatterplot IQ by Shoe Size
+```{r}
+plot(easy$IQ, easy$Shoe, col="green") #simple scatterplot of IQ by Shoe Size
+```
+
+# Using the %>% function
+This very helpful function "chains" commands so that you do not have to. Is called "piping" from dplyr package. Take a dataset - pipe it into the next command. Rather than "dresser and drawer" say "just look in this dresser," to R. 
+
+newdataframe <- olddataframe %>% mutate(newvariablename = operation)
+
+# ifelse function
+ifelse(criteria, "something", "somethingelse")
+If criteria, then something, if not then something else.
+```{r}
+str(easy) #inspect easy
+easy2 <- easy %>% mutate(newvar = IQ-Shoe) #we made a new dataframe called easy2
+easy2 #print DF
+
+#now we want to group by big or little feet via a new variable
+easy3 <- easy2 %>% mutate(BigFoot = ifelse(Shoe < 7,"small", "big") )
+# Here, I mutate easy2 to easy3. I make a new var BigFoot, which queries the Shoe var in easy2 and categorizes them into small if less than 7 and big if anything else. BigFoot is a factor variable: i.e., do Bigger feet = bigger IQ?
+easy3
+
+easy4 <- easy3 %>% mutate(SmartorNo = ifelse(IQ <= 110, "No" , "Smart"))
+easy4
+
+easy5 <- easy4 %>% mutate(Weird = ifelse(Shoe*IQ <= 600 , "cherry","white"))  
+easy5
+
+#Check order of operations with parentheses around Shoce*IQ <=600
+easy6 <- easy4 %>% mutate(Weird = ifelse((Shoe*IQ <= 600), "cherry","white"))  
+easy6 #output is the same as easy5, but see "Square a Number"
+
+```
+
+square a number
+```{r}
+-3^2
+
+```
+
+# Subsetting a Variable
+dplyr filter and select commands 
+-- select out specific columns
+```{r}
+smallset <- easy4 %>% select(1:3) #grab columns 1-3 from  my original dataframe and write to a new object called # # smallset. Can also select(1, 5, 6)
+
+#tinyset <- smallset %>% filter(1-4) *******#what is happening??? Jamie will see***************
+```
+
+# Transforming a variable
+Create a new variable from using some operation on an old variable. 
+```{r}
+
+```
+
+Is there any relationship between IQ and Shoe Size in this dataset?
+```{r}
+
+``` 
+
+
+# Scaling up in complexity
+Now we will look at some much more complex data (dat_complex) using many of the same scripting commands you used with the simple data.  This dataset represents lexical characteristics for almost 80,000 English words. 
+
+# Read in new dataframe
+```{r}
+hard <- read.csv("dat_complex.csv" , header=T) %>% clean_names() #read in dataset and clean using janitor library
+str(hard) #look at overall structure of hard dataframe
+
+```
+
+# Average frequency of a word
+what is the average frequency per million words of an English word?
+```{r}
+hard %>% mean(brys_freqsubtlex, na.rm=TRUE) #********Why are you not working? JR will find out************8
+mean(hard$brys_freqsubtlex,  na.rm=TRUE) #find average frequency, remove missing (NA) operations)
+```
+
+#Low and High Imageability
+what is the lowest imageability and highest imageability word in English?
+```{r}
+#hard %>% range(gls_img, na.rm=TRUE)  # not working, stop here
+```
+
+what is the longest word in English?
+```{r}
+
+```
+
+how many observations are in this dataset?
+```{r}
+
+```
+
+data transformations and grouping variables
+```{r}
+#dat2 <- dat %>% mutate(newgroup, ifelse(nlet >=7, long, short))
+```
+
+
+
+
+
+# Extra credit challenge!
+How many English words have more than 6 letters?
+```{r}
+# ifelse command
+```
+
+how to create a grouping variable -- are long words acquired later than short words?
+```{r}
+#lets say long words vs short words
+```
+
+
+

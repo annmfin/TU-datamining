@@ -1,0 +1,112 @@
+---
+title: "TU_TextMine_Midterm"
+author: "Ann Marie Finley"
+date: "9/25/2020"
+output:
+  html_document:
+    toc: true
+    toc_depth: 1
+    df_print: paged
+    css: jamie_mod6.css
+---
+```{r setup, include=F}
+knitr::opts_chunk$set(fig.width=6, fig.height=4, fig.align = 'center', fig.path='Figs/', eval=T, echo=T, tidy=TRUE,  cache=T, message=F, warning=F)  
+```
+
+```{r echo=F}
+library(tidyverse)
+library(stringi)
+library(wordcloud)
+library(corpus)
+library(RColorBrewer)
+library(tm)  
+library(qdapRegex)
+library(mgsub)
+```
+
+# Introduction: We Should All Be Feminists
+## By Chimimanda Ngozi Adiche
+XX why this project, significance to me, interesting - what do I think? Feminist is pos or neg? Lots of cleaning bc of punctuation, time marks  <br />
+
+# Reading in the Text
+```{r}
+fem <- readLines("feminists_adiche.txt") #Read in the plain text file
+str(fem) #Examine structure of data
+print(fem) #Inspect text file
+```
+
+There is a lot to clean here:
+1. Spacing
+2. Punctuation: watch out for intra-word dashes and quotes
+3. Odd character strings
+4. Annotations 
+5. Digits 
+6. Case <br />
+
+# Cleaning
+## Shaping a Concatenated Character Vector - Spacing
+```{r}
+fem1 <- paste(readLines("feminists_adiche.txt"), collapse = " ") #Reformat by concatenating into a single row by gluing all spacing together.
+str(fem1) #Examine structure of data
+length(fem1) #I'm anal about checking the number of rows
+print(fem1) #Spacing has been fixed
+#fem1 %>% stri_wrap() %>% print() #Reprint so that it does not break across words, this is aesthetics only - it worked a couple times and now does not?!****************
+```
+
+So far so good! Let's start to think about some of the tricker aspects of cleaning.  <br />
+
+## Removing Punctuation
+```{r}
+mgsub <- function(pattern, replacement, x, ...) {
+  if (length(pattern)!=length(replacement)) {
+    stop("pattern and replacement do not have the same length.")
+  }
+  result <- x
+  for (i in 1:length(pattern)) {
+    result <- gsub(pattern[i], replacement[i], result, ...)
+  }
+  result
+}
+
+fem2 <- gsub('[[:punct:] ]+',' ', fem1) #Strip out punctuation - But this smooshed the entire paragraph together. This will work nicely once character is vectorized and unlisted etc - otherwise it's word vomit.
+
+fem3 <- removePunctuation(fem1, preserve_intra_word_contractions = F); fem3 #try another way of stripping the punctuation. This seemed to work okay. I still have that odd character string. 
+
+```
+
+Onward! Now I need to edit out the digits and the annotations (Laughter).
+
+## Removing Odd Character String
+```{r}
+fem4 <- gsub("\\xca", " ", fem3); fem4 #Strip out the odd pattern I noted in the visually inspected data. Replace it with a space. #Well, that is not what I wanted to happen. Gotta look at my gsub again. 
+
+#Maybe multiple global substitutions will fix our problem. I had a lot of issues getting this code to run. I found this solution in the Kwartler text but then mgsub was experiencing a variety of issues.  
+
+patterns <- c("\xca")
+replacements <- c(" ")
+fem5 <- mgsub(patterns,replacements, fem3); fem5 #this worked with the little intro code thing at the top to define mgsub but still not sure why it isn't loading in the package I installed. Even when I call in the respective libraries up top and re-run it breaks. But, it worked with this trick. 
+```
+
+
+## Removing Digits and Annotations
+```{r}
+fem6 <- str_split(fem5, " ") %>% unlist()
+head(fem6)
+str(fem6)
+grep("[[:digit:]]", fem6, value=T) #Return all strings with digits in them
+fem7 <- gsub("[[:digit:]]", "", fem6); fem7 #Replace numbers with nothing
+
+grep("[Ll]aughter|[Aa]pplause", fem7, value=T) #Find annotations
+gsub("[Ll]aughter|[Aa]pplause", "", fem7) #Replace annotation with nothing
+
+fem8 <- stri_omit_empty(fem7, na_empty = T); fem8 #Remove empty tokens
+str(fem8)
+
+```
+
+## Change to Lowercase
+```{r}
+tolower(fem8)
+```
+
+

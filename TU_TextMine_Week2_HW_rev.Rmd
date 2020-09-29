@@ -1,0 +1,228 @@
+---
+title: "Week 2: Dataframes & Data Types"
+author: "Jamie Reilly, Ph.D."
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 1
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    df_print: paged
+    css: jamie_mod4.css
+---
+
+```{r setup, include=FALSE, cache=T}
+knitr::opts_chunk$set(fig.width=6, fig.height=4, fig.align = 'center', fig.path='Figs/', echo=TRUE, tidy=TRUE, message=F, warning=F, cache=T)
+```
+
+# Libraries 
+```{r echo=T, message=F}
+library(tidyverse)
+library(janitor)
+```
+
+# Vectors
+Uses the c() command. Contain all the same type of variable (integer, character, etc)
+```{r}
+emma <- c("a", "b", "c") #characters vs. strings
+print(emma)
+typeof(emma)
+```
+
+a new vector
+```{r}
+jamie <- seq(20, 25)
+print(jamie)
+typeof(jamie)
+```
+
+# Dataset 1
+We'll read in and inspect a very simple dataframe (dat_simple) here.  
+```{r}
+easy <- read.csv("dat_simple.csv", header=T)  #read in data, header is first row
+#remember no spaces, csv or text is best
+```
+
+Look at its structure and check for missing observations
+```{r}
+str(easy)
+```
+
+Print the whole dataframe
+```{r}
+easy
+```
+
+Examine just the first seven rows
+```{r}
+head(easy, n=7)
+```
+
+Examine just the last three rows
+```{r}
+tail(easy, n=6)
+```
+
+What is the smallest and largest shoe size?
+```{r}
+min(easy$Shoe) #amf
+max(easy$Shoe) #amf
+range(easy$Shoe) #ms
+```
+
+How many observations in my dataset?
+```{r}
+length(easy$IQ)
+```
+
+What is the average IQ?
+```{r}
+mean(easy$IQ)
+summary(easy$IQ)
+```
+
+Scatterplot IQ by Shoe Size
+```{r}
+plot(easy$IQ, easy$Shoe, col="red")
+```
+
+# Using the %>% function
+This very helpful function "chains" commands so that you do not have to
+mutate(newvarname, operation)
+newdata <- olddata %>% mutate(NewVariableName = SomethingMathy)
+```{r}
+print(easy)
+easy2 <- easy %>% mutate(NewVar = IQ-Shoe)
+median(easy$Shoe)
+```
+
+# ifelse function
+ifelse(criteria, something, somethingelse)
+```{r}
+easy3 <- easy2 %>% mutate(BigFoot = ifelse(Shoe < 7, "tiny", "big"))
+easy4 <- easy3 %>% mutate(LoHiGroup = ifelse(IQ <= 110, "lowfolk", "highfolk"))
+print(easy4)
+colnames(easy4)
+```
+
+
+# Subsetting columns and rows
+dplyr filter and select commands. 
+```{r}
+little <- easy4 %>% select(1,2,6) #returns columns 1,2,4 to a smaller dataframe called 'little'
+little2 <- little %>% filter(LoHiGroup == "highfolk") #just return the highfolk
+print(little2)
+```
+<br />
+
+# Scaling up in complexity
+Now we will look at some much more complex data (dat_complex) using many of the same scripting commands you used with the simple data.  This dataset represents lexical characteristics for almost 80,000 English words. 
+
+```{r}
+hard <- read.csv("dat_complex.csv", header=T) %>% clean_names()
+str(hard)
+```
+
+what is the average frequency per million words of an English word?
+```{r}
+hard %>% mean(brys_freqsubtlex, na.rm=T) #first way pipe -- Jamie get on this!
+mean(hard$brys_freqsubtlex, na.rm=T) #second way $
+```
+
+what is the lowest imageability and highest imageability word in English?
+```{r}
+range(hard$gls_img)
+```
+
+what is the longest word in English?
+```{r}
+
+```
+
+how many observations are in this dataset?
+```{r}
+
+```
+
+how many missing observations are there for gls_img?
+```{r}
+
+```
+
+what is the average letter length of a noun in English?
+(hint use brys_pos as grouping variable)
+```{r}
+
+```
+
+how many observations are there for each part of speech?
+(hint use brys_pos and table function)
+```{r}
+
+```
+
+create a grouping variable (abstract or concrete) using the median of concreteness as a cutpoint.
+How many abstract words are there using this method?
+(hint use mutate and ifelse to create a new variable with groups, then table that to get counts)
+```{r}
+
+```
+
+create a scatterplot of age of acquisition by word frequency
+(hint use brys_freqsubtlex as frequency and kup_aoa as age of acquisition)
+```{r}
+
+```
+
+can you make any inferences about the relationship between the age at which a word is acquired and its frequency in English?
+(hint just look at the scatterplot in the last question)
+```{r}
+#Write your answer here
+```
+
+create a smaller dataframe named "hard-small" that only reflects the first three columns of 'hard' and the first 1000 rows only.  Print the structure of hard-small
+
+```{r}
+
+```
+
+append a new variable to 'hard' -- call it PhonMinLett - that reflects the number of phonemes minus the number of letters for each word
+(hint use mutate with kup_nphon - kup_nlett)
+```{r}
+
+```
+
+What word corresponds to row 8761?
+```{r}
+
+```
+
+
+# Extra credit challenge!
+Generate a histogram of word frequency in English
+```{r}
+
+```
+
+Create a new variable meancentFreq that represents the mean centered values for word frequency?
+Print its minimum and maximum and its structure
+
+```{r}
+
+```
+
+Create a new variable zFreq that represents the z-transformed values for word frequency
+
+```{r}
+
+```
+
+Append a sequence of numbers to "hard" from 1 to the end of the dataset that could be used as a counter variable -- call this variable ID_Num 
+(hint - use seq_along with mutate)
+```{r}
+
+```
+
+

@@ -1,0 +1,97 @@
+---
+title: "Text Mining HW3: Frankenstein"
+author: "Ann Marie Finley"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 1
+    df_print: paged
+    css: jamie_mod6.css
+---
+
+```{r setup, include=F}
+knitr::opts_chunk$set(fig.width=6, fig.height=4, fig.align = 'center', fig.path='Figs/', eval=T, echo=T, tidy=TRUE,  cache=T, message=F, warning=F)  
+```
+
+```{r echo=F}
+library(tidyverse)
+```
+<br />
+
+# 1. Read in the data
+Here's the first paragraph of Frankenstein by Mary Shelley  <br />
+
+You will rejoice to hear that no disaster has accompanied the commencement of an enterprise which you have regarded with such evil forebodings.  I arrived here yesterday, and my first task is to assure my dear sister of my welfare and increasing confidence in the success of my undertaking.  <br >
+
+write this paragraph to an object called blockhead. then print blockhead
+
+```{r}
+#write the para to blockhead
+blockhead <- "You will rejoice to hear that no disaster has accompanied the commencement of an enterprise which you have regarded with such evil forebodings.  I arrived here yesterday, and my first task is to assure my dear sister of my welfare and increasing confidence in the success of my undertaking."; blockhead
+```
+
+what is the structure of blockhead?
+
+```{r}
+str(blockhead) #get structure
+```
+
+how many rows is blockhead?
+```{r}
+length(blockhead)
+```
+
+split (tokenize) blockhead into a vector of individual words. Call that bolthead
+(hint use: str_split with " " as the separator)
+```{r}
+bolthead <- strsplit(blockhead, " "); bolthead #tokenize blockhead by word, delimiter is a space
+str(bolthead) #check structure, it is a list of individual words within a single cell
+bolthead1 <- unlist(bolthead) #pull all words into unique rows
+str(bolthead1) #check structure
+
+```
+
+Convert bolthead to all upper case characters and print the first ten rows
+```{r}
+bolthead.up <- bolthead1 %>% toupper() #convert to uppercase
+head(bolthead.up, n= 10)
+
+```
+
+
+How many characters are in blockhead?
+```{r}
+nchar(blockhead)
+
+#I also look at bolthead1 here
+nchar(bolthead1) #if you ask for nchar after unlisting, it gives you nchar per word/token e.g., by row
+
+#what if we remove punctuation? Does R count punctuation as a characters?
+blockhead1 <- gsub('[[:punct:] ]+',' ', blockhead) #here we removed punctuation and replaced with spaces
+nchar(blockhead1) #R is still counting the spaces as characters
+
+blockhead2 <- gsub('[[:punct:] ]+','', blockhead) #here we removed punctuation and replaced with [nothing]
+nchar(blockhead2) #this is the number of letters (characters) 
+
+```
+
+How many words are in blockhead?
+```{r}
+lengths(gregexpr("[A-z]\\W+", blockhead)) + 1L #shoutout to google for this code. Another way to get this count would be to use the tokenized and unlisted character vector from bolthead1 as below
+
+length(bolthead1)
+```
+
+Where did I go wrong in life?
+```{r}
+answer <- "In oH So mANy waYs." #write in answer
+answer1 <- strsplit(answer, " ") #tokenize
+answer2 <- unlist(answer1) #unlist
+length(answer2) #how many words/rows
+answer3 <- answer2 %>% tolower() #make it very ee cummings pt. 1
+answer4 <- gsub('[[:punct:] ]+','', answer3) #make it very ee cummings pt. 2 - sub punctuation for '[nothing]'
+tail(answer4, n = 3) #look at last three rows
+```
+
+

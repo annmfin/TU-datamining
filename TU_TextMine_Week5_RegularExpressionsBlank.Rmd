@@ -1,0 +1,204 @@
+---
+title: "Regular Expressions in R"
+author: "Jamie Reilly. Ph.D."
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 1
+    css: jr_v1.css
+---
+
+```{r setup, include=F}
+knitr::opts_chunk$set(fig.width=6, fig.height=4, fig.align = 'center', fig.path='Figs/', eval=T, echo=T, tidy=TRUE,  cache=T, message=F, warning=F)  
+```
+
+```{r echo=F}
+library(tidyverse)
+library(stringi)
+```
+
+# Regular Expressions
+Regular expressions are also known as regex or regexp, and they are magical. Regular expressions involve a syntax for string matching of the sort used in find-and-replace algorithms. Here are some of the metacharacters we will be using in various text mining applications:  <br />
+. | ( ) [ { ^ $ * + ?  - <br />
+
+# Nomenclature of Metacharacters
+["stuff_to_match"] brackets a character class-- a set of characters you hope to match with regular expressions. Make sure to honor the brackets and the quotes. <br />
+
+### Description of metacharacters  <br />
+'-' denotes a range or sequence such as ["a-d"] <br />
+'.' denotes any character such as ["b.d"] (returns spaces, letters, etc.) <br />
+'|' denotes 'or' (e.g., ["a|B"] return obs that have an a or a B in them <br />
+'^' denotes 'not' (e.g.,["^9"] return obs that don't match 9 <br />
+'\\' escapes a metacharacter <br />
+'*' previous character repeated 0 or more times <br />
+'+' previous character repeated 1 or more times 
+<br />
+<br />
+
+### Help & practice
+Regexp cheatsheet https://rstudio.com/wp-content/uploads/2016/09/RegExCheatsheet.pdf <br />
+Online regular expression checker https://spannbaueradam.shinyapps.io/r_regex_tester/ <br />
+<br />
+
+## More
+Some Character Classes (copied from the RStudio cheatsheet):  <br />
+1. [[:digit:]] or \\\\d digits; [0-9] <br />
+2. \\\\D - non-digits; [^0-9] <br />
+3. [[:lower:]] -- Lower-case letters; [a-z] <br />
+4. [[:upper:]] -- Upper-case letters; [A-Z] <br />
+5. [[:alpha:]] -- Alphabetic characters; [A-Za-z] <br />
+6. [[:alnum:]] -- Alphanumeric characters [A-Za-z0-9] <br />
+7. \\\\w -- Word characters; [A-Za-z0-9_] <br />
+8. \\\\W -- Non-word characters <br />
+9. [[:punct:]] -- Punctuation characters; !"#$%&’()*+,-./:;<=>?@[]^_`{|}~ <br />
+
+Let's work with regular expressions on a familiar pangram with some extra junk in it. Read this phrase into an object called 'pan' so that each element separated by a space gets its own row in a character vector. Hint -- you need to unlist and/or split the string if you read it in raw.<br />
+
+**The qU\*iccK brOwn Fox &^ Jump;s ove_r the Laz7y d'og .**
+
+```{r}
+#pan <-
+#class(pan)
+#print(pan)
+```
+Our goal is to eventually clean this up and eventually tokenize it. There are misspellings, errant punctuation, extra white space and a mix of upper and lowercase letters. Let's first check some of the observations using metacharacters and regular expressions. <br />
+<br />
+
+# One-by-one  
+## . 
+Let's grep our way to retrieving observations with some particular patterns where the form is grep(pattern, string, value=T). If you want to search or extract a character like "." that is also reserved as a metacharacter, you must escape the character with //  <br />
+1. return all observations with an "i" followed by any character <br />
+2. return all observations with a "T" followed by any character <br />
+3. return all observations with a J followed by any character then an m <br />
+4. return all observations where "^" is preceeded by any character
+```{r}
+#
+#
+#
+#
+```
+
+## | means or
+1. return all observations with an "i" or a "z" in them <br />
+2. return all observations with an "o", "&", or "j" <br />
+3. return all observations with a digit or an "F" <br />
+4. return all observations of the pattern t _ e or  o _ e <br />
+5. return all observations with a "z" and a "y" in them
+```{r}
+#
+#
+#
+#
+#
+```
+
+## [...] specifies permitted characters and [^...] not permitted characters
+1. Return all observations with "the" or "The" 
+2. Return all observations that do are not "The" or "the" 
+```{r}
+#
+#
+```
+
+## [a-z] specifies a sequence of characters
+1. Return all observations with letters a,b,c, or d in them
+2. Return all observations with the numbers 7-9 in them
+2. Return all observations that do not have the letters m-z in them
+```{r}
+#
+#
+```
+
+# Character Classes
+1. Return all entries with digits in them
+2. Return all entries with punctuation in them
+3. gsub out punctuation for an empty space -- form is gsub(pattern, relacement, vec) - write to pan2
+```{r}
+#
+#
+```
+
+# Anchors
+1. ^ Start of the string
+2. $ End of the string
+3. \\\\b Empty string at either edge of a word
+4. \\\\B NOT the edge of a word
+5. \\\\< Beginning of a word
+6. \\\\> End of a word  <br />
+
+Let's give some of these a shot
+1. Return words in pan2 that start with a T or a t
+2. Return words in pan2 that don't start with a T or a t
+```{r}
+#
+#
+```
+<br />
+
+# Quantifiers
+1. \\* matches at most 0 times  <br />
+2. \+ Matches at least 1 time  <br />
+3. \? Matches at most 1 time; optional string <br />
+4. \{n} Matches exactly n times  <br />
+5. \{n,} Matches at least n times  <br />
+6. \{,n} Matches at most n times <br />
+7. \{n,m} Matches between n and m times <br />
+
+let's try some quantifiers <br />
+1. Return words that with at least two c's in them
+```{r, eval=T}
+#
+```
+
+# More advanced regexp practice
+Let's see how some these expressions work in a mixed string of letters, numbers, and punctuation.
+```{r, eval=T, echo=T}
+set.seed(123) #stri_rand_strings(n, length, pattern = "[A-Za-z0-9]")
+weird <- stri_rand_strings(25, sample(3:7), pattern = "[A-Za-z0-9;#$*@!]")  
+print(weird)
+str(weird)
+```
+
+# Exercises
+These exercises index the vector "weird" you just created in the last step.
+1. grep strings that have a vowel in them
+2. grep strings that don't have a vowel 
+3. grep strings that have an "a" or "p" anywhere in them.
+4. grep strings that have are six characters long
+5. grep strings that begin with a consonant
+6. grep strings that begin with a digit
+7. grep strings that end with a vowel
+8. grep strings that have one or more vowels. 
+9. grep strings that start with punctuation.
+10. gsub punctuation for nothing.
+11. convert all letters to lowercase
+12. eliminate all numbers
+13. strip whitespace
+
+```{r}
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
+
+```
+<br />
+<br />
+
+# Read in Oscar Wilde's Flower of Love
+We will try some of these regexp IRL. Let's use readLines to do this.
+```{r}
+#wilde <- readLines("flower.txt")
+```
+
+

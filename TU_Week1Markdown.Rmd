@@ -1,0 +1,40 @@
+---
+title: "Temple 1"
+author: "Jamie Reilly"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+    number_sections: false
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    df_print: paged
+    css: jamie_mod4.css
+---
+
+```{r setup, include=FALSE, cache=T}
+knitr::opts_chunk$set(fig.width=6, fig.height=4, fig.align = 'center', fig.path='Figs/', echo=TRUE, tidy=TRUE, message=F, warning=F, cache=T)
+```
+
+# Introduction
+This file will help introduce RMarkdown and will serve as the template for your first homework.
+
+```{r echo=T, message=F}
+library(tidyverse)
+```
+
+# generate some fake data
+
+```{r}
+x <- sample(100, 100) #sample from 1 to 100, 100 times no replacement
+y <- sample (100, 100)
+z <- data.frame(x,y)  #combine variables x and y into a single dataframe
+plot(z$x, z$y, col="red") # plot them, the $ is needed to index
+```
+
+
+
+
+

@@ -1,0 +1,55 @@
+---
+title: "Dracula! The Homework"
+author: "Ann Marie Finley"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 1
+    df_print: paged
+    css: jamie_mod5.css
+---
+
+```{r setup, include=F}
+knitr::opts_chunk$set(fig.width=6, fig.height=4, fig.align = 'center', fig.path='Figs/', eval=T, echo=T, tidy=TRUE,  cache=T, message=F, warning=F)  
+```
+
+```{r echo=F}
+library(tidyverse)
+```
+<br />
+
+# 1. Read in the data
+Here is paragraph 3 from Dracula by Bram Stoker. <br />
+
+Having had some time at my disposal when in London, I had visited the British Museum and made search among the books and maps in the library regarding Transylvania. It had struck me that some foreknowledge of the country could hardly fail to have some importance in dealing with a nobleman of that country <br />
+
+Write this paragraph to an object called CountDracula
+
+```{r}
+CountDracula <- c("Having had some time at my disposal when in London, I had visited the British Museum and made search among the books and maps in the library regarding Transylvania It had struck me that some foreknowledge of the country could hardly fail to have some importance in dealing with a nobleman of that country")
+```
+
+# 2. Convert to lowercase
+Convert CountDracula to all lowercase characters as a new object called LittleDracula.  Print out LittleDracula to check your work
+```{r}
+LittleDracula <- CountDracula %>% tolower() %>% print()
+```
+
+# 3. Split the string 
+So that in LittleDracula each word is a separate row (i.e., an independent token).  Write this new vector to SoloDracula
+Hint: use strsplit with " " as the separator.  
+
+```{r}
+SoloDracula <- strsplit(LittleDracula, " ") 
+```
+
+# 4. Print the first 10 rows of SoloDracula
+```{r}
+head(SoloDracula, n=10)
+```
+
+
+
+
+

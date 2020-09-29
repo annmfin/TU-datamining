@@ -1,0 +1,30 @@
+---
+title: "TU Data Mining Class 1"
+author: "Ann Marie Finley"
+date: "8/25/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+2+2 = 
+
+```{r}
+# here I am just adding two numbers
+2+2
+
+# and here I am finding the remainder of 27 divided by 5
+27 %% 5
+
+# here is the number of students in the course, calculated using an arbitrary set of numbers 
+57-53
+
+```
+
+
+In this course, I am interested in utilizing data mining to analyze langauge and narrative characteristics in older persons, both normally aging and at risk for MCI or dementia. I am interested in examining the semantic diversity and complexity of narratives. Additionally, I want to learn how to use N-grams for narrative analysis in machine learning. Eventually, I want to explore how narrative/language characteristics are related to measures of cognition, neural function and architecture, and risk for cognitive decline.
+
+
+

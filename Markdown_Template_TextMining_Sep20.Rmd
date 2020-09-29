@@ -1,0 +1,20 @@
+---
+title: "My Text Markdown"
+author: "Jamie Reilly, Ph.D."
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 1
+    df_print: paged
+    css: jamie_mod6.css
+---
+
+```{r setup, include=F}
+knitr::opts_chunk$set(fig.width=6, fig.height=4, fig.align = 'center', fig.path='Figs/', echo=TRUE, tidy=TRUE,  cache=T, message=F, warning=F, stringsAsFactors=F)
+```
+
+```{r echo=F}
+library(tidyverse)
+```
+

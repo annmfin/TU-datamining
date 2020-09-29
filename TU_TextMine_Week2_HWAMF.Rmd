@@ -1,0 +1,346 @@
+---
+title: "Week 2: Dataframes & Data Types HW"
+author: "Ann Marie Finley"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 1
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    df_print: paged
+    css: jamie_mod4.css
+---
+
+```{r setup, include=FALSE, cache=T}
+knitr::opts_chunk$set(fig.width=6, fig.height=4, fig.align = 'center', fig.path='Figs/', echo=TRUE, tidy=TRUE, message=F, warning=F, cache=T)
+```
+
+# Libraries 
+```{r echo=T, message=F}
+library(tidyverse)
+library(janitor)
+library(reshape)
+```
+
+# Vectors
+Uses the c() command. Contain all the same type of variable (integer, character, etc)
+```{r}
+emma <- c("a", "b", "c") #characters vs. strings
+print(emma)
+typeof(emma)
+```
+
+a new vector
+```{r}
+jamie <- seq(20, 25)
+print(jamie)
+typeof(jamie)
+```
+
+# Dataset 1
+We'll read in and inspect a very simple dataframe (dat_simple) here.  
+```{r}
+easy <- read.csv("dat_simple.csv", header=T)  #read in data, header is first row
+#remember no spaces, csv or text is best
+```
+
+Look at its structure and check for missing observations
+```{r}
+str(easy)
+```
+
+Print the whole dataframe
+```{r}
+easy
+```
+
+Examine just the first seven rows
+```{r}
+head(easy, n=7)
+```
+
+Examine just the last three rows
+```{r}
+tail(easy, n=3)
+```
+
+What is the smallest and largest shoe size?
+```{r}
+min(easy$Shoe) #amf
+max(easy$Shoe) #amf
+range(easy$Shoe) #ms
+```
+
+How many observations in my dataset?
+```{r}
+length(easy$IQ) #how long is the list of observations in easy for IQ
+```
+
+What is the average IQ?
+```{r}
+mean(easy$IQ)
+summary(easy$IQ)
+```
+
+Scatterplot IQ by Shoe Size
+```{r}
+plot(easy$IQ, easy$Shoe, col="red")
+```
+
+# Using the %>% function
+This very helpful function "chains" commands so that you do not have to
+mutate(newvarname, operation)
+newdata <- olddata %>% mutate(NewVariableName = SomethingMathy)
+```{r}
+print(easy)
+easy2 <- easy %>% mutate(NewVar = IQ-Shoe)
+median(easy$Shoe)
+```
+
+# ifelse function
+ifelse(criteria, something, somethingelse)
+```{r}
+easy3 <- easy2 %>% mutate(BigFoot = ifelse(Shoe < 7, "tiny", "big"))
+easy4 <- easy3 %>% mutate(LoHiGroup = ifelse(IQ <= 110, "lowfolk", "highfolk"))
+print(easy4)
+colnames(easy4) #get column names
+```
+
+
+# Subsetting columns and rows
+dplyr filter and select commands. 
+```{r}
+small <- easy4 %>% select(1,2,6) #grabs columns 1,2,6 to make smaller dataframe called "small"
+small2 <- small %>% filter(LoHiGroup == "highfolk") #just return the observations with the highfolk grouping in LoHi var
+small2
+```
+<br />
+
+# Scaling up in complexity
+Now we will look at some much more complex data (dat_complex) using many of the same scripting commands you used with the simple data.  This dataset represents lexical characteristics for almost 80,000 English words. 
+
+```{r}
+hard <- read.csv("dat_complex.csv", header=T) %>% clean_names()
+str(hard)
+```
+
+What is the average frequency per million words of an English word?
+```{r}
+#hard %>% mean(brys_freqsubtlex, na.rm=T) #first way pipe -- Jamie get on this**
+mean(hard$brys_freqsubtlex, na.rm=T) #query dataframe hard for mean word frequency 
+```
+
+What is the lowest imageability and highest imageability word in English? <br />
+Quiescent and carrot, respectively.
+```{r}
+range(hard$gls_img, na.rm = T) #find the lowest and highest values for imageability, exclude NA/missing values
+
+hard %>% filter(gls_img %in% c(1.737,6.941)) #pull out values for lowest (quiescent) and highest (carrot) imageability words in English
+
+```
+
+What is the longest word in English? <br />
+At 22 letters, two words are tied for the longest English word: counterrevolutionaries and deinstitutionalization (both from the Kuperman norms although 3 sets of English word norms were queried for number of letters).
+```{r}
+hardnlett <- hard %>% select(1, 2,  13, 17)  #select relevant columns - e.g., word and various nlett vars
+str(hardnlett) #make sure I selected the right columns
+head(hardnlett, 10) #take an extra peek at first ten obs
+tail(hardnlett, 10) #look at last ten obs, but here all three nlett columns are NA. na.rm=T does not do anything here --> na.rm vs na omit pairwise, obs, casewise
+
+#typeof(hardnlett$elp_nlett) #check type
+#typeof(hardnlett$gls_nlett)
+#typeof(hardnlett$kup_nlett)
+
+range(hardnlett$gls_nlett, na.rm=T) #look at range of this var, excluding missing vars
+range(hardnlett$kup_nlett, na.rm=T) #look at range of this var, excluding missing vars
+range(hardnlett$elp_nlett, na.rm=T) #look at range of this var, excluding missing vars
+
+hardnlett %>% filter(kup_nlett %in% c(1,22)) #Kuperman norms have highest max value, so pull out corresponding lowest and highest values for nlett
+
+```
+
+How many observations are in this dataset? 
+```{r}
+#str(hard) #look at structure, including total number of obs - but prettier to do as below
+length(hard$word) #check number of obs for this var (if we do not speficy the var, we  get the number of columns in the dataframe, 36)
+```
+
+How many missing observations are there for gls_img? 
+```{r}
+summary(hard) #this gave me my answer but I don't love it - provides summary stats and NA count for each column
+#maybe a way to do this with length and filter commands?
+
+is.na(hard$gls_img) #piping did not work bc object 'gls_img' not found. This gives me a T or F value for all observations of gls_img in dataframe hard: 5,590 are not NA; 67,869 are NA.
+
+# missimg <- hard %>% filter(gls_img == "NA") #Note to self - why can't I filter for NA values? 
+# str(missimg)
+
+```
+
+What is the average letter length of a noun in English?
+(hint use brys_pos as grouping variable)
+```{r}
+nouns <- hard %>% filter(brys_pos == "Noun") #filter for only observations that are Nouns
+str(nouns) #get an overall look at new dataframe
+head(nouns, 10) #peek at first ten obs
+tail(nouns, 10) #peek at last ten obs
+
+nounlett <- nouns %>% select(1, 2,  13, 17) #filter nouns to only look at nlett cols
+str(nounlett) #overall look
+head(nounlett, 10) #peek at first ten obs
+tail(nounlett, 10) #peek at last ten obs
+
+#piping method did not work for the means below - why?
+mean(nounlett$gls_nlett, na.rm =T) #look at mean length of gls, exclude missing values
+mean(nounlett$kup_nlett, na.rm =T) #look at mean length of kup, exclude missing values
+mean(nounlett$elp_nlett, na.rm =T) #look at mean length of elp, exclude missing values
+
+#average the mean values from each column by adding and dividing by 3
+((mean(nounlett$gls_nlett, na.rm =T) + mean(nounlett$kup_nlett, na.rm =T) + mean(nounlett$elp_nlett, na.rm =T))/3)
+
+
+#But the above method does not account for the TOTAL number of words represented across all three sets of norms. So I will try to melt all 3 nlett vars together to get a more accurate average noun length.
+meltn <- nounlett %>% melt(measure.vars = 2:4, id.vars = 1, na.rm=T) #melt nlett cols together, cols 2-4 are measured, col 1 is the ID, remove missing values
+str(meltn) #take a look at structure of new dataframe
+colnames(meltn) #look at column names
+head(meltn, 10) #looks at first ten obs
+tail(meltn, 10) #looks at last ten obs
+mean(meltn$value) #get new mean noun length
+
+```
+
+How many observations are there for each part of speech? 
+(hint use brys_pos and table function)
+```{r}
+as.data.frame(table(hard$brys_pos)) #generate a table for the various counts in brys_pos and make it a dataframe so it looks prettier 
+
+#summary(hard$brys_pos) #I actually think the summary is more informative than the table function because it includes missing value information.
+```
+
+Create a grouping variable (abstract or concrete) using the median of concreteness as a cutpoint.
+How many abstract words are there using this method?
+
+(hint use mutate and ifelse to create a new variable with groups, then table that to get counts)
+```{r}
+median(hard$brys_concreteness, na.rm=T) #get median value of concreteness
+
+hardcon <- hard %>% mutate(Concrete = ifelse(brys_concreteness < 2.9, "Abstract" , "Concrete")) #we made a new dataframe called hardcon that groups by median concreteness into "abstract" if less than 2.9 and "concrete" if anything else
+
+table(hardcon$Concrete) #get counts of Concrete and Abstract words
+
+```
+
+Create a scatterplot of age of acquisition by word frequency 
+(hint use brys_freqsubtlex as frequency and kup_aoa as age of acquisition)
+```{r}
+#hard %>% plot(kup_aoa, brys_freqsubtlex, col = "green") #why does piping not work here?
+
+plot(hard$kup_aoa, hard$brys_freqsubtlex, col = "green") #scatterplot of AoA x Word Frequency, with green color
+
+```
+
+Can you make any inferences about the relationship between the age at which a word is acquired and its frequency in English?
+(hint just look at the scatterplot in the last question)
+```{r}
+#It seems that we aqcuire higher-frequency words at a younger age. After ~7 years of age, the words we acquire tend to be approximately equally frequent. 
+```
+
+Create a smaller dataframe named "hard-small" that only reflects the first three columns of 'hard' and the first 1000 rows only.  Print the structure of hard-small
+
+```{r}
+hardsmall <- hard %>% select(1:3) #select first three columns of hard
+hard_small <- hardsmall %>% slice(1:1000) #cut everything below the first 1000 rows off
+str(hard_small) #examine structure of new dataframe
+
+```
+
+Append a new variable to 'hard' -- call it PhonMinLett - that reflects the number of phonemes minus the number of letters for each word
+(hint use mutate with kup_nphon - kup_nlett)
+```{r}
+newhard <- hard %>% mutate(PhonMinLett = kup_nphon - kup_nlett) #append new variable to hard, creating a new dataframe called hewhard
+str(newhard) #check out the structure to make sure it worked
+```
+
+What word corresponds to row 8761?
+```{r}
+newhard %>% slice(8761) #look at only row 8761 in dataframe newhard
+
+```
+
+
+# Mandatory extra work for the olds
+Generate a histogram of word frequency in English
+```{r}
+#newhard %>% hist(brys_freqsubtlex) #why doesn't piping work here?
+
+summary(newhard$brys_freqsubtlex) #Get an overall look at frequency summary stats
+
+#hist(newhard$brys_freqsubtlex) #make a basic histogram of word frequency - but so ugly
+
+#h <- hist(newhard$brys_freqsubtlex) #look at characteristis of histogram of frequency to try to better bin and make a prettier histogram
+#h *still did not work*
+
+#make a fancier histogram of word frequency, trying to improve bin widths
+#h2 <- hist(newhard$brys_freqsubtlex,
+     # main="Histogram of English Word Frequency",
+    # xlab="SUBTLEX Word Frequency",
+   # ylab = "Count",
+   # xlim = c(0,250000),
+   #  border = "green",
+    # col= "pink",
+    # las=1,
+  #   breaks= 2)
+#h2 *also did not like this*
+
+#more attempts to make a prettier histogram using ggplot this time
+subtlex <- as.data.frame(newhard$brys_freqsubtlex, na.rm =T) #transform word frequency into to a dataframe called subtlex
+str(subtlex) #check structure of dataframe
+colnames(subtlex) #check col names
+
+names(subtlex)[names(subtlex) == "newhard$brys_freqsubtlex"] <- "brys_freq" #rename columns in subtlex dataframe
+colnames(subtlex) #check renaming worked
+
+# ggplot(subtlex, aes(x=brys_freq)) + geom_histogram() + scale_x_log10() + scale_y_log10()  #plot as a histogram using ggplot with log transformations *hate this look, try different below*
+
+subtlex2 <- na.omit(subtlex) #remove missing values for log transformation
+loglex <- subtlex2 %>%mutate(lgbrysf= log(brys_freq)) #add new variable by doing log transform on word frequency values - new dataframe
+str(loglex) #check that log transform worked by looking at structure
+
+ggplot(loglex, aes(x=lgbrysf)) + geom_histogram(color = "gray", fill = "pink") + labs(title="Histogram of English Word Frequency",
+   x="Log Transformed SUBTLEX Word Frequency",
+   y = "Count")  #histogram of log transformed word freqs, this is the beautiful one pls grade this one 
+
+```
+
+     
+Create a new variable meancentFreq that represents the mean centered values for word frequency?
+Print its minimum and maximum and its structure
+
+```{r}
+newlog <- loglex %>% mutate(meancentFreq = (brys_freq - mean(brys_freq)))  #create new variable of mean centered frequency values subtracting the mean of word frequencies from each wf value
+range(newlog$meancentFreq) #print min and max values of mean centered wf values
+str(newlog$meancentFreq) #check structure of mean centered wf values
+
+```
+
+Create a new variable zFreq that represents the z-transformed values for word frequency
+
+```{r}
+zframe <- newlog %>% mutate(zFreq = scale(brys_freq))
+str(zframe) #check out new dataframe
+
+```
+
+Append a sequence of numbers to "hard" from 1 to the end of the dataset that could be used as a counter variable -- call this variable ID_Num 
+(hint - use seq_along with mutate)
+```{r}
+hardnum <- hard %>% mutate(ID_Num =seq_along(word))
+str(hardnum) #check that mutate worked, verify ID_Num 
+head(hardnum, 10) #verify top ten obs just for fun
+tail(hardnum, 10) #verify last ten obs just for fun
+
+```
+
+

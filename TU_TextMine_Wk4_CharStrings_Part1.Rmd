@@ -1,0 +1,207 @@
+---
+title: "Working with characters: Part I - In Class"
+author: "Ann Marie Finley"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+    df_print: paged
+    css: jamie_mod5.css
+---
+
+```{r setup, include=F}
+knitr::opts_chunk$set(fig.width=6, fig.height=4, fig.align = 'center', fig.path='Figs/', echo=TRUE, tidy=TRUE,  cache=T, message=F, warning=F)
+```
+
+```{r echo=F}
+library(tidyverse)
+```
+
+# Characters & Strings
+```{r}
+a <- "hello world!"; a #enclose characters with quotes or else they get executed as code
+```
+
+Generate a count of the characters in a string or vector
+```{r}
+nchar(a) #counts the number of characters including spaces
+```
+
+## Strings 
+Strings are sequences of more than one characters
+```{r, eval=T}
+planets <- c("m", "v", "e", "m", "j", "s", "u", "n", "p"); planets  #separate elements
+is.character(planets) #boolean evaluates to True (1) or False (0) - you can count the number of a condition
+```
+
+## Paste
+Converts data to character and concatenates into vectors separating by the sep argument.  <br />
+It takes this form paste(..., sep = " ", collapse = NULL) -- where the default separator is a space.  <br />
+Here's an example combining a statement with printing the system date. If you specify collapse=T, you will remove all delimiters (spaces here)
+```{r, eval=T}
+paste("Hi! today is", (Sys.Date()))  #collapse=NULL
+```
+
+## Separators & delimiters
+'cat' concatenates and prints a character vector
+```{r, eval=T}
+cat(2:12, sep = "+")  #the '+" is a delimiter here
+cat(2:12, sep = "/") 
+cat(2:12, sep = "a") 
+```
+
+## Case Manipulation
+```{r, eval=T}
+dat <- c("ThE Day wAS LONG and TeRriBle."); dat  
+dat.low <- dat %>% tolower() #convert to lowercase
+dat.up <- dat %>% toupper() #convert to uppercase
+print(dat.low)
+print(dat.up)
+```
+
+## String Splitting
+Sometimes you need to split the elements of a string (e.g., tokens) into separate units. <br />
+The strsplit(string, delimiter) command is useful for this. This takes the form: <br />
+newdat <- strsplit(olddat, "separator [usually a space] ") - turns things into a LIST
+
+```{r, eval=T}
+length(dat.low)  #print 
+splitup <- strsplit(dat.low, " ") %>% print()
+length(splitup)
+new <- c("hi i'm not feeling well"); new #we need to split/tokenize vector by word
+snew <- strsplit(new, " "); snew #the inside of the quotes marks how the different tokens are divided
+```
+<br />
+
+# Detect, Locate, Extract, Replace String Patterns
+## Detect
+Grep - Is a pattern happening?
+
+## Locate
+regexpr(pattern, string) - see other markdown <br />
+find starting position and length of first match
+
+## Extract 
+regmatches(string, regexpr(pattern, string))
+extract first match [1] "tam" "tim"
+
+## Replace
+sub(pattern, replacement, string)
+replace first match - stringr pattern does a similar thing
+<br /> gsub = a global search and replace
+<br />
+<br />
+
+# Grep & grepl
+We are going to work a bit with a built in character vector called colors().
+```{r}
+head(colors(), n=25) #colors is a built in character vector of color palettes in R
+length(colors())
+typeof(colors())
+str(colors())
+tail(colors(), n=3)
+(colors()[329]) #brakets say "give me row 329 - if you have nothing after, it'll return ALL associated cols. brackets essentially say [row, col]
+(colors()[505:508]) #give me rows 505 to 508; R likes : for sequences - this is subsetting; similar to slice
+
+
+```
+
+Base R default returns indices of matching arguments -- [1] 1st observation column <br />
+The grep function format involves pattern match where pattern is a character string <br />
+grep(pattern, x, ignore.case = FALSE, perl = FALSE, value = FALSE,
+     fixed = FALSE, useBytes = FALSE, invert = FALSE)
+
+```{r}
+try <- c("a", "b", "a", "c", "z", "b", "a")
+grep("a", try, value=F) #will give indices - each row index of each occurrence, numerically
+grep("a", try, value=T) #will give values for words with an 'a' in them - what words have an "a" in them here?
+grep("a", try, value=T, invert=T) #inverse -- returns words WITHOUT an 'a' in them
+```
+
+Let's try this with a much longer character vector --  colors()
+```{r}
+grep("green", colors(), value=F) #will give indices with the string green in them
+grep("green", colors(), value=T) #will give any word with "green" in it
+
+
+blue <- grep("blue", colors(), value=F) #make a set of blue colors
+length(blue) #how many colors have blue in them?
+```
+
+Let's inspect a few indices -- maybe 85 to 88
+```{r}
+colors()[85:88]
+```
+
+How many shades of green are in the R color palette?
+```{r}
+length(grep("green", colors(), value=F))
+```
+
+Now let's look for indices that have the words "green" or "white" in them; | means "or"
+```{r}
+grep("green|white", colors(), value=T) #help jamie
+
+borange <- grep("orange", colors(), value=T, invert=T) #what colors don't have orange
+length(borange)
+
+graqua <- grep("green|aqua", colors(), value=T)  #what colors have green or aqua
+length(graqua)
+
+```
+<br />
+
+Let's return values instead of indices
+```{r}
+grep("green", colors(), value=F) #will give values with the string green in them
+```
+
+# Grepl
+returns a boolean true/false at each index
+```{r}
+grepl("green", colors()) #can sum truths to get count of green words
+```
+
+# Setdiff
+contrasts two vectors, subtract out elements/values in one from another -- think of subtracting brain 1 activation from brain 2 activation 
+```{r}
+me <- c("philadelphia", "new york", "boston")
+you <- c("philadelphia", "new york", "boston", "new orleans")
+setdiff(me, you)  #me versus you what is different? --> there is nothing different, everything in me is in you
+setdiff(you, me)  #you versus me what is different? --> new orleans is different
+
+set.seed(123)
+a <- as.data.frame(sample(letters[1:26], 200, replace=T))
+head(a)
+
+set.seed(456)
+b <- as.data.frame(sample(letters[1:26], 200, replace=T))
+head(b)
+
+setdiff(a, b)
+```
+
+# Sub & gsub
+substitutes one string for another gsub= global substutition - gsub(take this, relplacethat, invector)
+```{r, eval=F}
+you<- c("you make me sick!", "you really do.")   #sub(pattern = "x", replacement = "m", vector name)
+print(you)
+me <- sub("you", "I", you)  #only does first instance
+print(me)
+globe <- gsub("you", "I", you) #global - substututes all instances
+print(globe)
+
+```
+
+# Try Substituting Colors
+```{r}
+colors1 <- colors()
+length(grep("blue", colors1, value=T))  #how many colors have blue
+
+colors2 <- gsub("blue", "cat", colors1) #substitute cat for blue
+length(grep("blue", colors2, value=T))  
+length(grep("cat", colors2, value=T))  
+```
+
+

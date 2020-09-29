@@ -1,0 +1,104 @@
+---
+title: "Intro to Character Strings"
+author: "Jamie Reilly"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+    number_sections: false
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    df_print: paged
+    css: jamie_mod4.css
+---
+
+```{r setup, include=FALSE, cache=T}
+knitr::opts_chunk$set(fig.width=6, fig.height=4, fig.align = 'center', fig.path='Figs/', echo=TRUE, tidy=TRUE, message=F, warning=F, cache=T)
+```
+
+Libraries 
+```{r echo=T, message=F}
+library(tidyverse)
+jamie.theme <- theme_bw() + theme(axis.line = element_line(colour = "black"), panel.grid.minor = element_blank(), panel.grid.major = element_blank(), panel.border = element_blank(), panel.background = element_blank(), legend.title= element_blank())
+```
+
+# Character strings
+```{r}
+#close characters with quotes or else they get executed as code
+a <- "hello world!"
+print(a)
+```
+
+# Creating character vectors
+```{r}
+planets <- c("m", "v", "e", "m", "j", "s", "u", "n", "p")  #separate elements
+planets
+typeof(planets)  #test type of vector 4 ways
+is.character(planets) #boolean
+class(planets)
+str(planets)
+```
+
+# Strings as factors
+By default, character strings inside a data frame will be converted to factors. You need to tell R explicitly not to do this using stringsAsFactors = FALSE
+```{r}
+dfA <- data.frame(numbers=1:5, letters=letters[1:5])
+dfB <- data.frame(numbers=1:5, letters=letters[1:5], stringsAsFactors = FALSE)
+```
+
+# Paste
+The paste command is super useful for characters. It takes this form
+paste(..., sep = " ", collapse = NULL) -- where the default seperator is a space.  The arguments get executed as character strings. Here's an example combining a statement with printing the system date. 
+
+```{r}
+saythedate <-  paste("Hi! today is", (Sys.Date()))
+saythedate
+```
+
+# Paste0
+Is equivalent to collapse = T
+```{r}
+a <- paste0("get", "me", "the", "hell", "out", "of", "here")
+b <- paste0("get me the hell out of here") #this doesn't work!
+print(a)
+print(b)
+
+```
+
+# Letters
+## seperators
+
+```{r}
+cat(2:12, sep = "+")  #means concatenate and print
+cat(2:12, sep = "/") 
+cat(2:12, sep = "a") 
+```
+
+## Case manipulation
+```{r}
+dat <- c("ThE Day wAS LONG and TeRriBle.")  #convert to lowercase
+dat.l <- tolower(dat)
+print(dat.l)
+```
+
+## string splitting
+strsplit(string, delimiter)
+```{r}
+strsplit(dat.l, " ") %>% print()
+```
+
+# String pattern matching
+## grep
+base R returns indices of matching arguments
+
+```{r}
+try <- c("a", "b", "a", "c", "z", "b", "a")
+grep(try)
+```
+
+
+length(colours())
+
+

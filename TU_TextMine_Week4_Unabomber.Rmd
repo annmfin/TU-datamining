@@ -1,0 +1,211 @@
+---
+title: "Unabomber Manifesto: Text Analysis"
+author: "Ann Marie Finley"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 1
+    df_print: paged
+    css: jamie_mod6.css
+---
+
+```{r setup, include=F}
+knitr::opts_chunk$set(fig.width=6, fig.height=4, fig.align = 'center', fig.path='Figs/', eval=T, echo=T, tidy=TRUE,  cache=T, message=F, warning=F, stringsAsFactors=F)  
+```
+
+# Introduction
+This is an exercise for Introduction to Text Mining (Temple University CSD5000, Fall Semester 2020). We will be running some basic sentiment and frequency analyses on Theodore Kaczynski's essay: <br />
+
+<font size="5"><span style="color: Olive;">Industrial Society and its Future</span></font>  
+
+![Kaczynski's cabin in rural Montana](images/cabin.jpg){width=60%}
+
+# Libraries
+We will be leaning pretty heavily on the tm package here.
+```{r echo=T}
+library(tidyverse) #has stringr bundled
+library(tm)  
+library(stringi) #string splitting and wrapping
+library(wordcloud)
+library(corpus)
+library(RColorBrewer)
+```
+
+# Read in unstructured text
+Our first challenge is to squeeze the unformatted text file into R.   <br />
+```{r}
+una <- readLines("unabomber_manifesto.txt") # read the raw essay in and inspect it, each line is a separate element in a character vector with length equal to the number of lines. Character vector is the length of the number of rows read in.
+print(una)
+str(una)  #each line is a separate element in the character vector; we don't want that.
+```
+
+That didn't work the way we wanted it to. There are >3000 rows.  Let's try a different way. We need to concatenate the essay into a character vector of length=1 so that we can eventually tokenize by words. <br />
+
+## Import a Different Way 
+Paste should work by eliminating the line breaks and concatenating the text into a single character vector. <br />
+```{r}
+una2 <- paste(readLines("unabomber_manifesto.txt"), collapse = " ") #concatenate into a single obs using the paste function -- opposite of str_split, collapse by space -- paste "glues" into one object
+str(una2) #character vector of length 1
+length(una2) #check that it's 1
+print(una2)  #this shows a concatenated character vector - what we want for analysis
+una2 %>% stri_wrap() %>% print() #prints it so it does not break across words; corrects display only; can change width within stri_wrap to print to fit monitor
+```
+That worked like a charm. So far so good... <br />
+
+# Clean & Prep Text: Steps
+Now we have to deal with all sorts of messiness. What do you notice in the raw character vector una2?  <br />
+1. mixture of upper and lowercase letters is no good <br />
+2. punctuation needs to be stripped (not interword though) <br />
+3. section numbers and extraneous spaces gotta go <br />
+4. stemming - we want roots not prefixes or suffixes <br />
+
+## Strip punctuation
+Let's first strip out all punctuation. We will use the removePunctuation function from the text mining (tm) package, making sure we also remove intra word punctuation (e.g., contractions)
+```{r}
+una2 <- removePunctuation(una2, preserve_intra_word_contractions = F) #state as false or true, "it is" vs "it's" - contractions are preserved with apostrophoe after we do this (WHY?)
+#rather than delete punctuation, you can add a separator (?) 
+una2 %>% stri_wrap() %>% print() #memory cost if you write to a new file bc stored in computer files; we will work with spaces later. quotes are a bit of a problem but since we have so many words it should be fine, depending on our goals
+```
+That looks like it stripped out punctuation. Right... onward! <br />
+
+## Strip numbers
+Replace numbers with a space -- we don't care about numbers and don't want them in there. We will use a regular expression with global substitution (gsub) to replace numbers with spaces. This takes the form gsub(pattern = "x", replacement = "m", vector name)
+```{r}
+una2 <- gsub("\\d", " ", una2) #regex - find any digit, replace with blank space, look in una3. T
+una2 %>% stri_wrap() %>% print()
+```
+I don't see any numbers in una2. Let's keep going. <br />
+
+## Match all lower case
+Let's make all words lowercase
+```{r}
+una2 <- tolower(una2)
+una2 %>% stri_wrap() %>% print()
+```
+
+## Strip stopwords
+We probably want to get rid of function words, determiners, conjunctions -- words that really are not informative about the content of the narrative. In text mining, these are called stopwords. The text mining package has a "stock" list of stopwords.  You can view the stock list (see next) or you can modify the list and generate your own stopwords. Of note, the stopwords are all lowercase -- if you apply them make sure you have completed that case conversion
+```{r}
+stopwords()  #lists the 100+ stock stopwords in the text mining package
+#mystopwords <- c("dummy", "idiot", "moron") -- If you want to create your own stopword vector 
+```
+
+Let's remove stopwords from the Unabomber Manifesto.  here's the structure of the command we will use: <br />
+removeWords(dat, wordstoremove)
+```{r}
+una2 <- removeWords(una2, stopwords())
+una2 %>% stri_wrap() %>% print()
+```
+Looking good with eliminating all the little words! <br />
+
+## Strip singletons 
+Use a regular expression to get rid of any individual letter fragments.
+```{r}
+una2 <- gsub("\\b[a-z]\\b{1}", " ", una2)  #This means find any letter that starts a word that is one letter long and replace it with a space in the vector una6.
+una2 %>% stri_wrap() %>% print()
+```
+
+## Strip other weirdness
+Looks like a few errant quotes we can gsub out. This got weird!  You need single quotes to substitute double quotes.
+```{r}
+una2 <- gsub('\"', " ", una2) #doesn't work
+una2 %>% stri_wrap() %>% print()
+```
+
+## Strip whitespace
+```{r}
+una2 <- stripWhitespace(una2)
+una2 %>% stri_wrap() %>% print()
+```
+
+# Sentiment Analysis
+Sentiment analysis provides an index of the emotional valence of all the items in a given corpus.  We will cover a very simple/crude way of doing this here by matching each entry in the manifesto to a list of either positive or negatively valent words.  <br />
+
+If the total number of "positive minus negative" matches is positive, then the narrative has positive sentiment <br />
+## Split character vector
+Each word now needs to be its own independent observation. Then unlist the list.
+```{r}
+una2 <- str_split(una2, " ") #space is the delimiter
+class(una2) #we've now split the single chr vector into a list
+una2 <- unlist(una2)
+class(una2)
+```
+
+Next we need to contrast words in the unabomber manifesto with positive and negative sentiment.
+We will import a corpus of positive words from here: <br />
+http://ptrckprry.com/course/ssd/data/positive-words.txt
+
+We will import a corpus of negative words from here: <br />
+http://ptrckprry.com/course/ssd/data/negative-words.txt
+
+```{r}
+pos <- readLines("positive-words.txt")
+print(pos)
+neg <- readLines("negative-words.txt")
+print(neg)
+```
+
+We will use the match function to test whether words in the Unabomber manifesto match either the positive or negative lexical corpus <br />
+```{r}
+length(una2)
+match(una2, pos) #boolean checks for matches between manifesto and positive corpus, na if no match
+PosSent <- sum(!is.na(match(una2, pos)))  #sum positive matches - observations that are not NA
+NegSent <- sum(!is.na(match(una2, neg))) #sum manifesto to negative matches - observations that are not NA
+```
+
+To derive an overall sentiment score, it's simply positive word count minus negative word count
+```{r}
+PosSent - NegSent
+```
+We find that there is slightly more negative than positive sentiment among content words in the Unabomber Manifesto. Well, duh!
+
+# Wordcloud
+Plots in concentric circles by word frequency -- uses the wordcloud package
+```{r, fig.width=10, fig.height=10}
+set.seed(123)  #prevents resampling, samples once then locks in that random sample
+wordcloud(una2, min.freq = 2, max.words=300, random.order=FALSE, rot.per=0.25, colors=brewer.pal(10, "Spectral"))
+```
+
+## Frequency sorting
+```{r, fig.width=8, fig.height=6}
+unacorp <- Corpus(VectorSource(una2)) 
+wtm <- TermDocumentMatrix(unacorp)
+m <- as.matrix(wtm)  #to a regular matrix
+v <- sort(rowSums(m),decreasing=TRUE)
+d <- data.frame(word = names(v),freq=v)
+barplot(d[1:25,]$freq, las = 2, names.arg = d[1:25,]$word, col ="green", main ="Most frequent", ylab = "Word frequencies")  #most frequent
+
+```
+
+
+# Stemming & Lemmatization
+## Strip affixes 
+This helpswith term aggregation. In the Unabomber Manifesto, he talks at length about industry using different inflected forms (e.g., industry, industrialization, industries). We want to aggregate these terms under the root form. Enter stemming.
+```{r}
+#unaXX <- stemDocument(unaXX)  #strips common prefixes and suffixes using the corpus package's snowball stemming library
+#unaXX %>% stri_wrap() %>% print()
+```
+
+## Complete stem fragments
+```{r}
+#unaYY <- stemCompletion
+#unaYY %>% stri_wrap() %>% print()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

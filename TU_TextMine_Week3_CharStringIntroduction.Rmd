@@ -1,0 +1,206 @@
+---
+title: "Character Strings & Regular Expressions In Class"
+author: "Ann Marie Finley"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 1
+    df_print: paged
+    css: jamie_mod5.css
+---
+
+```{r setup, include=TRUE, message=F, warning=F}
+knitr::opts_chunk$set(fig.width=6, fig.height=4, fig.align = 'center', fig.path='Figs/', echo=TRUE, tidy=TRUE,  cache=T)
+```
+
+Libraries  #can add eval=F to this code block to say "don't run" or up top for overhead and then can eval=T to run by block
+```{r echo=T, message=F}
+library(tidyverse)
+jamie.theme <- theme_bw() + theme(axis.line = element_line(colour = "black"), panel.grid.minor = element_blank(), panel.grid.major = element_blank(), panel.border = element_blank(), panel.background = element_blank(), legend.title= element_blank())
+```
+
+# Definitions
+Boolean expressions - evaluate to True or False <br />
+Regex - regular expressions: like magic in specifying search parameters for string values: "Look for anything with more than one vowel/ends in a consonant."
+
+
+# Character strings
+```{r} 
+#close characters with quotes or else they get executed as code
+a <- "hello world!"
+print(a) #a is now recognized as one chunk
+length(a) #how long is this vector? it is 1 but we frequently want to tokenize 
+```
+
+## Character vectors
+```{r}
+planets <- c("m", "v", "e", "m", "j", "s", "u", "n", "p")  #separate elements
+planets
+typeof(planets)  #test type of vector 4 ways: type, is.char, class, str
+is.character(planets) #boolean
+class(planets) #type of variable
+str(planets)
+length(planets)
+```
+
+## Strings as factors ##SKIP FOR NOW 9/10
+By default, character strings inside a data frame will be converted to factors (* note this is not the case with tibbles). You need to tell R explicitly not to do this using stringsAsFactors = FALSE
+```{r}
+dfA <- data.frame(numbers=1:5, letters=letters[1:5], stringsAsFactors = TRUE)
+dfB <- data.frame(numbers=1:5, letters=letters[1:5], stringsAsFactors = FALSE)
+str(dfA)
+str(dfB)
+```
+
+## Paste0
+Is equivalent to collapse = T -- The paste command is super useful for characters. It takes this form
+paste(..., sep = " ", collapse = NULL) -- where the default separator is a space.  The arguments get executed as character strings. Here's an example combining a statement with printing the system date. 
+
+```{r}
+saythedate <-  paste("Hi! today is", (Sys.Date()))
+saythedate
+a <- paste0("get", "me", "the", "hell", "out", "of", "here")
+b <- paste0("get me the hell out of here") #this doesn't work!
+print(a)
+print(b)
+```
+
+## Seperators
+cat - binds and prints elements all in one command. Inverse of pasting and collapsing
+```{r}
+cat(2:12, sep = "+")  #means concatenate and print
+cat(2:12, sep = "/") 
+cat(2:12, sep = "a") 
+cat(2:12, sep = "_")
+```
+
+## Case Manipulation
+```{r}
+dat <- c("ThE Day wAS LONG and TeRriBle.")  
+dat.lower <- tolower(dat) #convert to lowercase
+dat.upper <- toupper(dat) #convert to uppercase
+print(dat.lower)
+print(dat.upper)
+```
+
+## String Splitting
+Sometimes you need to split the elements of a string (e.g., tokens) into separate units. The strsplit(string, delimiter) command is useful for this.
+
+```{r}
+print(dat.lower)
+length(dat.lower)
+splitlower <- strsplit(dat.lower, " ") %>% print() %>% length() ##look at on own, how to save split strings
+```
+<br />
+
+
+# Regular Expressions 
+in computer science also shortened as regex or regexp - this involves a syntax for string matching - the sort used in find and replace algorithms <br />
+
+Here are some types <br />
+| is 'or' (Boolean) --  e.g.,  white | green -- interpret as white "or" green <br />
++ is 'and'    "white"+"black" -- read as white "and" black <br />
+^*  starts with "^Happy" -- string begins with Happy -- Happy birthday, Happy Sunday, etc. <br />
+^[Ss]ad  -- begins with "Sad" or "sad" <br />
+. matches any character
+*$ ends with
+! means not
+
+```{r}
+stuff <- c("The", "Quick", "Brown", "Fox", "Jumps", "Over", "The", "Lazy", "Dog")  #pangram, all English letters
+stuff
+```
+
+let's try a literal match
+```{r}
+str_view(stuff, "e") #look at stuff, and look for anything with e in it (not E)
+str_view(stuff, "e|a|i|[Tt]") #look at stuff, and look for anything with e or a or i or t or T
+str_view(stuff, "!e|!a|!i|!o|!u")
+str_view(stuff, "e|!ow")
+str_view(stuff, "!e$") #return all words with an e in it but not at the end - but this did not work?! ********************JR to figure out end here 9.10
+```
+
+let's try an any character match
+```{r}
+str_view(stuff, "ro.")  #returns anything with ro. at any point in the string . here means ANY letter or character but will not search for a period
+```
+
+What if you want to search for a period when it is reserved for a special case?
+You need to specify "\\." <br />
+
+how about ends with 's'?
+
+```{r}
+str_view(stuff, "s$")
+```
+
+
+## grep & grepl
+We are going to work a bit with a built in character vector 
+```{r}
+head(colors(), n=25)
+length(colors())
+typeof(colors())  #colors is a built in character vector of color palettes in R
+```
+
+
+https://www.rdocumentation.org/packages/base/versions/3.6.2/topics/grep <br />
+https://www.youtube.com/watch?v=q8SzNKib5-4 <br />
+
+Base R default returns indices of matching arguments -- [1] 1st observation column 
+The grep function format involves pattern match where pattern is a character string
+grep(pattern, x, ignore.case = FALSE, perl = FALSE, value = FALSE,
+     fixed = FALSE, useBytes = FALSE, invert = FALSE)
+
+```{r}
+try <- c("a", "b", "a", "c", "z", "b", "a")
+grep("a", try, value=F) #will give indices
+grep("a", try, value=T) #will give values
+```
+
+Let's try this with a much longer character vector --  colors()
+```{r}
+grep("green", colors(), value=F) #will give indices with the string green in them
+```
+
+Let's inspect a few indices -- maybe 85 to 88
+```{r}
+colors()[85:88]
+```
+
+How many shades of green are in the R color palette?
+```{r}
+length(grep("green", colors(), value=F))
+```
+
+Now let's look for indices that have the words "green" or "white" in them
+```{r}
+grep("green | white", colors(), value=T)
+```
+<br />
+
+Let's return values instead of indices
+```{r}
+grep("green", colors(), value=F) #will give values with the string green in them
+```
+
+## grepl
+returns a boolean true/false at each index
+```{r}
+grepl("green", colors())
+```
+
+
+## setdiff
+contrasts two vectors subtract out elements in one from another
+```{r}
+me <- c("philadelphia", "new york", "boston")
+you <- c("philadelphia", "new york", "boston", "new orleans")
+setdiff(me, you)  #me minus you what is different?
+setdiff(you, me)  #you minus me what is different?
+```
+
+
+
+
