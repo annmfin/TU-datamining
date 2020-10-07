@@ -1,16 +1,17 @@
 ---
-title: "TU_TextMine_Midterm"
+title: "The Feminist Sentiment: A Text Mining Analysis of Chimamanda Ngozi Adichie"
 author: "Ann Marie Finley"
-date: "9/25/2020"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
 output:
   html_document:
     toc: true
+    fig_caption: true
     toc_depth: 1
     df_print: paged
-    css: jamie_mod6.css
+    css: AM_v3.css
 ---
 ```{r setup, include=F}
-knitr::opts_chunk$set(fig.width=6, fig.height=4, fig.align = 'center', fig.path='Figs/', eval=T, echo=T, tidy=TRUE,  cache=T, message=F, warning=F)  
+knitr::opts_chunk$set(fig.width=6, fig.height=4, fig.align = 'center', fig.path='Figs/', eval=T, echo=T, tidy=TRUE,  cache=F, message=F, warning=F, stringsAsFactors = F)  
 ```
 
 ```{r echo=F}
@@ -20,93 +21,263 @@ library(wordcloud)
 library(corpus)
 library(RColorBrewer)
 library(tm)  
-library(qdapRegex)
-library(mgsub)
+library(textclean)
+library(praise)
+library(knitr)
+library(koRpus)
+library(koRpus.lang.en)
+library(textstem)
 ```
 
-# Introduction: We Should All Be Feminists
-## By Chimimanda Ngozi Adiche
-XX why this project, significance to me, interesting - what do I think? Feminist is pos or neg? Lots of cleaning bc of punctuation, time marks  <br />
+# Introduction
+Chimamanda Ngozi Adichie is a Nigerian writer, feminist activist, and fashionista. Her work spans fiction, non-fiction, short stories, and novels. Ms. Adichie's work primarily deals with race, gender, and society both in Nigeria and in the United States. Fun fact - she briefly studied at Drexel University right here in Philadelphia.  <br /> <br /> 
+The selected text is a transcription of a lecture Ms. Adichie gave at TEDxEuston in December 2012. In 2014, Beyoncé Carter-Knowles famously adapted an excerpt from this speech into her song "***Flawless." <br/>
 
-# Reading in the Text
+![Miss Adichie in Paris](images/paris.jpg){width=30%}![Ms Adichie in 2020 Probably](images/airport.jpg){width=25%}<br/>
+<font size="2.5"> <i> Left: Ms. Adichie in Paris. Right: Ms. Adichie in 2020, probably. <br/> (Images from @chimamanda_adichie on Instagram). </i></font>
+
+```{r, eval=FALSE, paris, fig.show = 'hold', out.width = "20%", fig.align='default', fig.cap = "Ms. Adichie in Paris"}
+knitr::include_graphics(here::here("images", "paris.jpg"))
+knitr::include_graphics(here::here("images", "airport.jpg")) #tried a different way to add figures with captions but could not get them to sit next to each other with the appropriate captions
+```
+
+```{r, eval=FALSE, airport, fig.show = 'hold', out.width = "20%", fig.align='default',  fig.cap = "Ms. Adichie in 2020, Probably"} 
+knitr::include_graphics(here::here("images", "airport.jpg")) #tried a different way to add figures with captions but could not get them to sit next to each other with the appropriate captions
+
+```
+ <br/>
+ 
+# Reading in the Text 
 ```{r}
 fem <- readLines("feminists_adiche.txt") #Read in the plain text file
 str(fem) #Examine structure of data
 print(fem) #Inspect text file
 ```
 
-There is a lot to clean here:
-1. Spacing
-2. Punctuation: watch out for intra-word dashes and quotes
-3. Odd character strings
-4. Annotations 
-5. Digits 
+There is a lot to clean here: <br />
+1. Crazy spacing <br />
+2. Strip intra-word dashes <br />
+3. Strip odd character strings <br />
+4. Strip annotations and digits <br />
+5. Contractions <br />
 6. Case <br />
+7. Stop Words <br />
+8. Punctuation  <br />
+ <br />
 
-# Cleaning
-## Shaping a Concatenated Character Vector - Spacing
+# Adjust Spacing
+There is a lot of wild stuff happening with spacing. The following command collapses the character vector into a single row with each word separated by a single space.
 ```{r}
-fem1 <- paste(readLines("feminists_adiche.txt"), collapse = " ") #Reformat by concatenating into a single row by gluing all spacing together.
-str(fem1) #Examine structure of data
-length(fem1) #I'm anal about checking the number of rows
-print(fem1) #Spacing has been fixed
-#fem1 %>% stri_wrap() %>% print() #Reprint so that it does not break across words, this is aesthetics only - it worked a couple times and now does not?!****************
+fem <- paste(readLines("feminists_adiche.txt"), collapse = " ") #Reformat by concatenating all words into a single row separated by a space. Think of this as gluing the data into one row.
+str(fem) #Examine structure of data
+length(fem) #Double check the number of rows
+print(fem) #Spacing has been fixed
+
+#fem1 %>% stri_wrap() %>% print() #Reprint so that it does not break across words, this is aesthetics only - Maybe you have to split and then string wrap bc this did not work.
+```
+ <br/>
+ 
+# Remove Dashes and Odd Character Strings
+Let's take out that weird ASCII lookup (AKA odd character string) and the dashes. This way when we unlist nine-year-old it will not stay "nine year old" as a single vector, but rather separate into "nine" "year" "old" for individual analyses.
+```{r}
+#fem4 <- gsub("\xca", " ", fem3); fem4 #Strip out the odd pattern I noted in the visually inspected data. Replace it with a space.  This worked but I also tried a few other ways:
+
+fem1 <- gsub("[^\x01-\x7F]", " ", fem); fem1 #Finds any non-standard figures and removes them via ACSII look up. This works to remove the weird character string as well as any random other non-standard figures (credit to Marin). This does not remove punctuation or digits.
+
+#fem1 <- gsub("[^a-zA-Z]", " ", fem) # --> This code from Jamie removes anything that does not start with the letter a-z or A-Z and replaces it with a space. Thus, it will remove random punctuation and digits. However, this is not what we want to do quite yet as it will remove contractions, which we want to keep until we can change them to their un-contracted form.
+
+fem2 <- gsub("-", " ", fem1) #Subs dashes for spaces 
+
+fem2 #print and examine data
+```
+ <br/>
+
+# Removing Digits and Annotations
+We need to remove all of the time stamps and the audience participation annotations: (Laughter) and (Applause). <br/> Another way to do the latter would be to gsub anything in parentheses out for nothing. The way I did it leaves hanging parentheses. There are always going to be multiple ways to code something. For purposes of this project, I chose to complete a more broken down, step-by-step process. 
+```{r}
+
+grep("[[:digit:]]", fem2, value=T) #Return all strings with digits in them
+
+fem3 <- gsub("[[:digit:]]", "", fem2); fem3 #Replace numbers with nothing. Remember, if I used Jamie's code above, all numbers would already be gone. 
+
+grep("[Ll]aughter|[Aa]pplause", fem3, value=T) #Find annotations
+
+fem3 <- gsub("[Ll]aughter|[Aa]pplause", "", fem3) #Replace annotation with nothing
+
+fem4 <- stri_omit_empty(fem3, na_empty = T); fem4 #Remove empty tokens and print
+str(fem4) #Check structure
+```
+<br/>
+ 
+# Removing Punctuation and Fixing Contractions
+We have to be careful about the order of fixing contractions (e.g., "you're" to "you are") since we need to correct those before we remove punctuation.
+```{r}
+
+#fem7 <- gsub('[[:punct:] ]+',' ', fem6); fem7 # Strip out punctuation - But this is too all-encompassing since we need to keep intra-word contractions.
+
+fem5 <- removePunctuation(fem4, preserve_intra_word_contractions = T); fem5 # Remove punctuation, but preserve intra-word contractions
+
+fem6 <-  textclean::replace_contraction(fem5); fem6 # Change contractions to un-contracted form
+
+fem7 <- gsub("[[:punct:]]", " ", fem6); fem7 # Remove remaining contractions and replace with a space; print
+
+
+fem8 <- gsub("\\b[a-z]\\b{1}", " ", fem7); fem8 # Remove singletons and print new list.
+
+```
+<br/>
+ 
+# Change to Lowercase
+Stopwords are in all lowercase. Be sure to write into an object, otherwise it won't save.
+```{r}
+fem9 <- tolower(fem8); fem9 #Change to lower case and print
+```
+ <br/>
+ 
+# Remove Stop Words
+```{r}
+fem10 <- removeWords(fem9, stopwords()) #Removes stop words from standard list
+
+fem10 <- stri_omit_empty(fem10, na_empty = T); fem10 #Remove empty tokens and print
+
+```
+<br/>
+
+# Strip Whitespace and Empty Tokens
+```{r}
+fem10 <- stripWhitespace(fem10); fem10 #Strip whitespace and print
+
+```
+ <br/>
+  
+# Tokenizing and Unlisting the Data 
+Now that I have cleaned much of the data, I want to look at the data item by item.
+```{r}
+fem10 <- str_split(fem10, " ") %>% unlist() #Here, I used string split to separate the data by commas into individual tokens. This created a list, which I piped into the unlist function. 
+fem10 <- stri_omit_empty(fem10, na_empty = T) #Remove empty tokens
+head(fem10) #Check first entries 
+str(fem10) #Examine structure
+
+```
+ <br/>
+ 
+# Where am I with this text? 
+<br/> Let's take a look.
+```{r}
+writeLines(fem10, con="feminists_adiche_v2.txt") #save current file to txt format. I placed screenshots below for easy inspection.
 ```
 
-So far so good! Let's start to think about some of the tricker aspects of cleaning.  <br />
+![Pre-Cleaning](images/femtext_v1.png){width=80%} <br/> <font size="2.5"> <i> Top: Original text file. Bottom: Current text file. <br/>  </i></font> 
+![Post-Cleaning](images/femtext_v2.png){width=80%}
 
-## Removing Punctuation
 ```{r}
-mgsub <- function(pattern, replacement, x, ...) {
-  if (length(pattern)!=length(replacement)) {
-    stop("pattern and replacement do not have the same length.")
-  }
-  result <- x
-  for (i in 1:length(pattern)) {
-    result <- gsub(pattern[i], replacement[i], result, ...)
-  }
-  result
-}
-
-fem2 <- gsub('[[:punct:] ]+',' ', fem1) #Strip out punctuation - But this smooshed the entire paragraph together. This will work nicely once character is vectorized and unlisted etc - otherwise it's word vomit.
-
-fem3 <- removePunctuation(fem1, preserve_intra_word_contractions = F); fem3 #try another way of stripping the punctuation. This seemed to work okay. I still have that odd character string. 
-
-```
-
-Onward! Now I need to edit out the digits and the annotations (Laughter).
-
-## Removing Odd Character String
-```{r}
-fem4 <- gsub("\\xca", " ", fem3); fem4 #Strip out the odd pattern I noted in the visually inspected data. Replace it with a space. #Well, that is not what I wanted to happen. Gotta look at my gsub again. 
-
-#Maybe multiple global substitutions will fix our problem. I had a lot of issues getting this code to run. I found this solution in the Kwartler text but then mgsub was experiencing a variety of issues.  
-
-patterns <- c("\xca")
-replacements <- c(" ")
-fem5 <- mgsub(patterns,replacements, fem3); fem5 #this worked with the little intro code thing at the top to define mgsub but still not sure why it isn't loading in the package I installed. Even when I call in the respective libraries up top and re-run it breaks. But, it worked with this trick. 
+praise()
 ```
 
 
-## Removing Digits and Annotations
+# Sentiment Analysis
+Sentiment analysis provides an index of the emotional valence of all the items in a given corpus.  Here, I matched all of the words in my character vector to a database of "positive" and "negative" words.  <br />
+
+First, I imported a corpus of positive words from here: <br />
+http://ptrckprry.com/course/ssd/data/positive-words.txt
+
+Next, I imported a corpus of negative words from here: <br />
+http://ptrckprry.com/course/ssd/data/negative-words.txt <br/>
+
 ```{r}
-fem6 <- str_split(fem5, " ") %>% unlist()
-head(fem6)
-str(fem6)
-grep("[[:digit:]]", fem6, value=T) #Return all strings with digits in them
-fem7 <- gsub("[[:digit:]]", "", fem6); fem7 #Replace numbers with nothing
-
-grep("[Ll]aughter|[Aa]pplause", fem7, value=T) #Find annotations
-gsub("[Ll]aughter|[Aa]pplause", "", fem7) #Replace annotation with nothing
-
-fem8 <- stri_omit_empty(fem7, na_empty = T); fem8 #Remove empty tokens
-str(fem8)
-
+pos <- readLines("positive-words.txt") #import positive words
+print(pos)
+neg <- readLines("negative-words.txt") #import negative words
+print(neg)
 ```
 
-## Change to Lowercase
+I then used the match function to check for matches between my character vector and the respective databases. I calculated the total number of positively and negatively valenced words. <br />
 ```{r}
-tolower(fem8)
+match(fem10, pos) #Boolean, checks for matches between data and positive corpus. NA = no match
+match(fem10, neg) #Boolean, checks for matches between data and negative corpus. NA = no match
+PosSent <- sum(!is.na(match(fem10, pos))); print(PosSent) #Sums positive matches, excludes missing data
+NegSent <- sum(!is.na(match(fem10, neg))); print(NegSent) #Sums negative matches, excludes missing data
+length(fem10)
 ```
+<br/>
+
+To derive an overall sentiment score, I subtracted negative word count from positive word count. 
+```{r}
+PosSent - NegSent
+```
+
+From 2,016 words, there were 143 positive matches and 110 negative matches, for a total of 253 words (12.5%) represented across the positive and negative word databases. Of this number, 56.5% were positively valenced. This text is overall neutral although with a slight advantage for positively valenced words. <br/>
+
+# Wordcloud
+This function plots in concentric circles by word frequency -- uses the wordcloud package
+```{r, fig.width=8, fig.height=8}
+set.seed(123)  #Seed prevents resampling so that we have an accurate frequency based word cloud
+wordcloud(fem10, min.freq = 2, max.words=300, random.order=FALSE, rot.per=0.25, colors=brewer.pal(8, "Dark2"))
+```
+<br/>
+
+# Type Token Ratio
+```{r}
+fem11 <- as.data.frame(fem10) #transform to dataframe
+nrow(unique(fem11)) / nrow(fem11) #take total number of unique observations over total number of observations in dataframe
+```
+<br/>
+
+# Frequency Sorting
+```{r, fig.width=8, fig.height=6}
+femtx <- Corpus(VectorSource(fem10)) 
+wtm <- TermDocumentMatrix(femtx)
+m <- as.matrix(wtm)  #to a regular matrix
+v <- sort(rowSums(m),decreasing=TRUE)
+d <- data.frame(word = names(v),freq=v)
+barplot(d[1:25,]$freq, las = 2, names.arg = d[1:25,]$word, col = 'navy', main ="Most frequent", ylab = "Word Frequency")  #most frequent
+
+```
+<br/>
+
+# Stemming and Lemmatization 
+I wonder if my wordcloud, TTR, or frequency will change if I perform these calculations on lemmas rather than words. 
+```{r}
+lemma_dictionary_hs <- make_lemma_dictionary(fem10, engine = 'hunspell') #Designate dictionary for stem/lemma
+
+
+stem_words(fem10) #Stem words
+femlem <- lemmatize_words(fem10, dictionary = lemma_dictionary_hs); femlem #Lemmatize. This is not perfect but it's a start.
+
+```
+Many of the lemmas returned are not a true "root form," but rather simply have a suffix or two removed. Irregular plurals are kept.  <br/>
+
+# Lemma Wordcloud
+What looks different?
+```{r, fig.width=8, fig.height=8}
+set.seed(123)  #Seed prevents resampling so that we have an accurate frequency based word cloud
+wordcloud(femlem, min.freq = 2, max.words=300, random.order=FALSE, rot.per=0.25, colors=brewer.pal(8, "Dark2"))
+```
+<br/>
+
+# Lemma Type Token Ratio
+```{r}
+femlem1 <- as.data.frame(femlem) #transform to dataframe
+nrow(unique(femlem1)) / nrow(femlem1) #take total number of unique observations over total number of observations in dataframe
+```
+It is a little lower than TTR calculated on non-lemmatized words. This is not unexpected, since some words that were counted as unique are now collapsed into a lemma form (e.g., boys --> boy), thus decreasing lexical diversity. <br/>
+
+# Lemma Frequency Sorting
+```{r, fig.width=8, fig.height=6}
+femtx <- Corpus(VectorSource(femlem)) 
+wtm <- TermDocumentMatrix(femtx)
+m <- as.matrix(wtm)  #to a regular matrix
+v <- sort(rowSums(m),decreasing=TRUE)
+d <- data.frame(word = names(v),freq=v)
+barplot(d[1:25,]$freq, las = 2, names.arg = d[1:25,]$word, col = 'maroon', main ="Lemma Frequency", ylab = "Frequency Count")  #most frequent
+
+```
+"Boy" moved from eleventh most frequent (boys) to fourth. "Teach" also moved up. "Louis" disappeared, "raise" appeared. "Culture" and "world" moved down. "Different" appeared. What else changed? Is this more informative? <br/>
+
+# Next Steps
+<span style="color: Maroon;"><i> - Find word-specific valence measures by matching to Warriner or Saif valence norms <br/>
+- Context-specific word salience (e.g., sentimentr package) <br/>
+- Sentiment over time/by topic <br/>
+- Stay ***Flawless, y'all <br/>  </i></span>
 
 
