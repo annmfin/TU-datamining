@@ -11,7 +11,7 @@ output:
       collapsed: false
       smooth_scroll: false
     df_print: paged
-    css: jamie_mod4.css
+    css: ms_v3.css
 ---
 
 ```{r setup, include=FALSE, cache=T}

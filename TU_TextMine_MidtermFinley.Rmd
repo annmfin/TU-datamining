@@ -36,12 +36,12 @@ The selected text is a transcription of a lecture Ms. Adichie gave at TEDxEuston
 ![Miss Adichie in Paris](images/paris.jpg){width=30%}![Ms Adichie in 2020 Probably](images/airport.jpg){width=25%}<br/>
 <font size="2.5"> <i> Left: Ms. Adichie in Paris. Right: Ms. Adichie in 2020, probably. <br/> (Images from @chimamanda_adichie on Instagram). </i></font>
 
-```{r, eval=FALSE, paris, fig.show = 'hold', out.width = "20%", fig.align='default', fig.cap = "Ms. Adichie in Paris"}
+```{r, echo=FALSE, eval=FALSE, paris, fig.show = 'hold', out.width = "20%", fig.align='default', fig.cap = "Ms. Adichie in Paris"}
 knitr::include_graphics(here::here("images", "paris.jpg"))
 knitr::include_graphics(here::here("images", "airport.jpg")) #tried a different way to add figures with captions but could not get them to sit next to each other with the appropriate captions
 ```
 
-```{r, eval=FALSE, airport, fig.show = 'hold', out.width = "20%", fig.align='default',  fig.cap = "Ms. Adichie in 2020, Probably"} 
+```{r, echo=FALSE, eval=FALSE, airport, fig.show = 'hold', out.width = "20%", fig.align='default',  fig.cap = "Ms. Adichie in 2020, Probably"} 
 knitr::include_graphics(here::here("images", "airport.jpg")) #tried a different way to add figures with captions but could not get them to sit next to each other with the appropriate captions
 
 ```
@@ -59,14 +59,14 @@ There is a lot to clean here: <br />
 2. Strip intra-word dashes <br />
 3. Strip odd character strings <br />
 4. Strip annotations and digits <br />
-5. Contractions <br />
-6. Case <br />
-7. Stop Words <br />
-8. Punctuation  <br />
+5. Remove punctuation
+6. Fix contractions <br />
+7. Case <br />
+8. Stop Words <br />
  <br />
 
 # Adjust Spacing
-There is a lot of wild stuff happening with spacing. The following command collapses the character vector into a single row with each word separated by a single space.
+There is a lot of wild stuff happening with spacing. It looks like the text file read into 202 separate rows instead of reading in as a single-row character vector. Perhaps this is related to the odd character string "/xca" discussed below. I wasn't able to find it online so we shall simply press on. </br> The following command collapses the character vector into a single row with each word separated by a single space.
 ```{r}
 fem <- paste(readLines("feminists_adiche.txt"), collapse = " ") #Reformat by concatenating all words into a single row separated by a space. Think of this as gluing the data into one row.
 str(fem) #Examine structure of data
@@ -78,7 +78,7 @@ print(fem) #Spacing has been fixed
  <br/>
  
 # Remove Dashes and Odd Character Strings
-Let's take out that weird ASCII lookup (AKA odd character string) and the dashes. This way when we unlist nine-year-old it will not stay "nine year old" as a single vector, but rather separate into "nine" "year" "old" for individual analyses.
+Let's take out that odd character string and the dashes. This way when we unlist nine-year-old it will not stay "nine year old" as a single vector, but rather separate into "nine" "year" "old" for individual analyses.
 ```{r}
 #fem4 <- gsub("\xca", " ", fem3); fem4 #Strip out the odd pattern I noted in the visually inspected data. Replace it with a space.  This worked but I also tried a few other ways:
 
@@ -98,7 +98,7 @@ We need to remove all of the time stamps and the audience participation annotati
 
 fem3 <- gsub("[[:digit:]]", "", fem2); fem3 #Replace numbers with nothing. Remember, if I used Jamie's code above, all numbers would already be gone. 
 
-fem4 <- gsub("[Ll]aughter|[Aa]pplause", "", fem3) #Replace annotation with nothing
+fem4 <- gsub("[Ll]aughter|[Aa]pplause", "", fem3); fem4 #Replace annotation with nothing
 
 ```
 <br/>
@@ -109,14 +109,14 @@ We have to be careful about the order of fixing contractions (e.g., "you're" to 
 
 #fem7 <- gsub('[[:punct:] ]+',' ', fem6); fem7 # Strip out punctuation - But this is too all-encompassing since we need to keep intra-word contractions.
 
-fem5 <- removePunctuation(fem4, preserve_intra_word_contractions = T); fem5 # Remove punctuation, but preserve intra-word contractions
+fem5 <- removePunctuation(fem4, preserve_intra_word_contractions = T); fem5 # Remove punctuation, but preserve intra-word contractions. This keeps both possessives and contractions. We will fix this below.
 
 fem6 <-  textclean::replace_contraction(fem5); fem6 # Change contractions to un-contracted form
 
 fem7 <- gsub("[[:punct:]]", " ", fem6); fem7 # Remove remaining contractions and replace with a space; print
 
 
-fem8 <- gsub("\\b[a-z]\\b{1}", " ", fem7); fem8 # Remove singletons and print new list.
+fem8 <- gsub("\\b[a-z]\\b{1}", " ", fem7); fem8 # Remove singletons and print
 
 ```
 <br/>
@@ -130,7 +130,7 @@ fem9 <- tolower(fem8); fem9 #Change to lower case and print
  
 # Remove Stop Words
 ```{r}
-fem10 <- removeWords(fem9, stopwords()) #Removes stop words from standard list
+fem10 <- removeWords(fem9, stopwords()); fem10 #Removes stop words from standard list. Notice how much text is removed here! 
 
 ```
 <br/>
@@ -154,7 +154,7 @@ str(fem10) #Examine structure
  <br/>
  
 # Where am I with this text? 
-<br/> Let's take a look.
+Let's take a look. I know I have 2,016 rows in my character vector but I want to see how far I have come in my cleaning process.
 ```{r}
 writeLines(fem10, con="feminists_adiche_v2.txt") #save current file to txt format. I placed screenshots below for easy inspection.
 ```
@@ -165,7 +165,7 @@ writeLines(fem10, con="feminists_adiche_v2.txt") #save current file to txt forma
 ```{r}
 praise()
 ```
-
+</br>
 
 # Sentiment Analysis
 Sentiment analysis provides an index of the emotional valence of all the items in a given corpus.  Here, I matched all of the words in my character vector to a database of "positive" and "negative" words.  <br />
@@ -198,7 +198,7 @@ To derive an overall sentiment score, I subtracted negative word count from posi
 PosSent - NegSent
 ```
 
-From 2,016 words, there were 143 positive matches and 110 negative matches, for a total of 253 words (12.5%) represented across the positive and negative word databases. Of this number, 56.5% were positively valenced. This text is overall neutral although with a slight advantage for positively valenced words. <br/>
+From 2,016 words, there were 143 positive matches and 110 negative matches, for a total of 253 words (12.5%) represented across the positive and negative word databases. Of this number, 56.5% were positively valenced. This text is overall neutral although with a (very) slight advantage for positively valenced words. <br/>
 
 # Wordcloud
 This function plots in concentric circles by word frequency -- uses the wordcloud package
@@ -214,6 +214,7 @@ fem11 <- as.data.frame(fem10) #transform to dataframe
 nrow(unique(fem11)) / nrow(fem11) #take total number of unique observations over total number of observations in dataframe
 ```
 <br/>
+The closer to 1, the more unique words are represented (e.g., greater lexical diversity). If we multiply this result by 100 we see that 44.4% of words are unique in this character vector.
 
 # Frequency Sorting
 ```{r, fig.width=8, fig.height=6}
@@ -267,9 +268,15 @@ barplot(d[1:25,]$freq, las = 2, names.arg = d[1:25,]$word, col = 'maroon', main 
 "Boy" moved from eleventh most frequent (boys) to fourth. "Teach" also moved up. "Louis" disappeared, "raise" appeared. "Culture" and "world" moved down. "Different" appeared. What else changed? Is this more informative? <br/>
 
 # Next Steps
-<span style="color: Maroon;"><i> - Find word-specific valence measures by matching to Warriner or Saif valence norms <br/>
+<i> - Find word-specific valence measures by matching to Warriner or Saif valence norms <br/>
 - Context-specific word salience (e.g., sentimentr package) <br/>
 - Sentiment over time/by topic <br/>
-- Stay ***Flawless, y'all <br/>  </i></span>
+- Stay ***Flawless, y'all <br/>  </i>
+ <br/>
+ 
+```{r}
+praise()
+```
+
 
 
