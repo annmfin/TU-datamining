@@ -1,0 +1,132 @@
+---
+title: "A pipeline for cleaning & prepping text in R"
+author: "Jamie Reilly, Ph.D."
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 1
+    df_print: paged
+    css: ms_v2.css
+---
+
+```{r setup, include=F}
+knitr::opts_chunk$set(fig.width=6, fig.height=4, fig.align = 'center', fig.path='Figs/', eval=T, echo=T, tidy=TRUE,  cache=T, message=F, warning=F, stringsAsFactors=F)  
+```
+
+# Introduction
+We will be cleaning and lemmatizing the raw unambomber manifesto. <br />
+This document demonstrates an ordered sequence of steps for preparing text for higher level term aggregation, sentiment analysis, etc.
+
+```{r echo=F}
+library(tidyverse) #has stringr bundled
+library(tm)  
+library(stringi) #string splitting and wrapping
+library(wordcloud)
+library(corpus)
+library(tidytext)
+library(textstem)
+library(textclean)
+```
+
+# Read in raw unstructured text
+Read raw text file into R using readLines combined with paste.
+```{r}
+una2 <- paste(readLines("feminists_adiche.txt"), collapse = " ") #concatenate into a single obs using the paste function -- opposite of str_split, collapse by space
+print(una2)  #concatenated character vector - what we want for analysis
+class(una2)
+```
+
+# Clean & Prep Text: Steps
+Once we have the data successfully read in, we have to deal with all sorts of messiness. <br />
+
+Here's a proposed cleaning sequence: <br />
+**Text In** <br />
+1. Eliminate hyphens (e.g., well-established), replace with single space. <br />
+2. Transform all letters to lowercase. <br />
+3. Replace and complete contractions (it's to it is) <br />
+4. Strip ordinal suffixes (1st, 2nd, 43rd, 57th, etc) <br />
+5. Strip remaining punctuation, numerals, non-alphabetic characters <br />
+6. Strip singleton lonewolves <br />
+7. Strip stopwords <br />
+8  Strip whitespace <br />
+9. Split string and unlist <br />
+**Text Out**
+
+## 1. Strip dashes replace with space
+There's a problem with the removePunctuation function in the next step for intraword dashes in entries like *well-established*.  removePunctuation uses the regex [[:punct:]] and spaces are closed. That results in abominations like *wellestablished*.  You can preserve intraword dashes in the removePunctuation function using: preserve_intra_word_dashes = FALSE, but here we will just get rid of them and replace with a space using global substitution.
+```{r}
+una2 <- gsub("-", " ", una2)  #global substitution space for dash, splits well-established to well established
+```
+
+## 2. Match all lower case
+Let's make all words lowercase
+```{r}
+una2 <- tolower(una2)
+```
+
+## 3. Contractions 
+If you remove [[:punct:]] willy nilly, you will miss contractions. the **textclean** package has a function that replaces contractions like *it's* with *it is*
+```{r}
+una2 <- removePunctuation(una2, preserve_intra_word_contractions = T) #remove punctuation retain contractions
+una2 <- replace_contraction(una2)  #Replace the contractions "it's" now is "it is"
+```
+
+## 4. Strip ordinal suffixes (1st, 2nd, 3rd, etc)
+```{r}
+una2 <- gsub("\\d+(st|nd|rd|th)", " ", una2)  #gets rid of the suffix for any number >1
+```
+
+## 5. Strip remaining punctuation, numerals, non-alphabetic characters
+Thanks to Marin Kautz for finding the ascii table code
+```{r}
+una2 <- gsub("[^a-zA-Z]", " ", una2)  #regex - interpret gsub as as search for not lower or uppercase alphabetic characters - dumps numbers, symbols, errant punctuation
+#una2 <- gsub("[^\x01-\x7F]", " ", una2) #Marin Kautz found this code snippet that gsubs anything that isn't a character code in the hexadecimal range 0x20 to 0x7E, i.e. 32 to 126" in an ascii table. It works, but is Greek to me!
+```
+
+## 5. Strip singleton fragments
+Use a regular expression to get rid of any individual letter fragments.
+```{r}
+una2 <- gsub("\\b[a-zA-Z]\\b{1}", " ", una2)  #This means find any letter that starts a word that is one letter long (including a AND I) and replace it with a space
+```
+
+## 6. Strip stopwords
+Dump function words, determiners, conjunctions -- words that really are not informative about the content of the narrative. The tm package has several stopword lists.  You can view the stock list (see next) or you can modify the list and generate your own stopwords. Of note, the stopwords are all lowercase. You must have converted your corpus to lowercase before you remove stopwords. We will use the removeWords function and the SMART stopwords lexicon which has about 600 entries in it. As an aside, if you wanted to censor a document, you could create your own cursing list and pass it to removeWords the same way you apply a stopword list: <br />
+removeWords(dat, wordstoremove)
+```{r}
+#stopwords('SMART')  #lists the 600+ stock stopwords in the text mining package
+#mystopwords <- c("dummy", "idiot", "moron") -- If you want to create your own stopword vector 
+una2 <- removeWords(una2, stopwords("SMART")) #Uses the 600 word SMART stopwords list
+```
+
+## 7. Strip whitespace & empty strings
+The final step -- removing errant spaces and empty strings
+```{r}
+una2 <- una2 %>% stripWhitespace() %>% stri_remove_empty()
+#una2 <- stri_remove_empty(una2, na_empty = TRUE)
+una2 %>% stri_wrap() %>% print()
+```
+
+# Check txt
+Write our cleaned up text object to an external text file for inspection. 
+```{r}
+writeLines(una2, con = "unabomb_cleantext_v1.txt")
+```
+
+## 8. Tokenize by word
+Split string so that each word is its own row in an unlisted character vector with the number of rows equal to the number of words in corpus (after cleaning)
+```{r}
+una2 <- unlist(str_split(una2, " "))
+una2 <- as.data.frame(una2, stringsAsFactors=F)
+print(una2)
+```
+
+## 9. Spell correct
+TBD
+
+## 10. Lemmatization & reconstruction
+TBD
+
+
+
+
