@@ -7,7 +7,7 @@ output:
     toc: true
     toc_depth: 1
     df_print: paged
-    css: jamie_mod6.css
+    css: jamie_mod5.css
 ---
 
 ```{r setup, include=F}

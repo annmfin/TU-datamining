@@ -1,11 +1,13 @@
 /* Whole document: */
+
 body{
-  font-family: avenir;
+  font-family: 'Alata'
   font-size: 14pt;
   color: black;
   background-color: #f2f2f2;
  /* background-image: url("background-hex.jpg"); */
 }
+
 
 /* Headers */
 
